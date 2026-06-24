@@ -146,11 +146,10 @@ const canvas=document.getElementById('c');
 canvas.width=window.innerWidth;canvas.height=window.innerHeight;
 const gl=canvas.getContext('webgl',{{antialias:false,alpha:false}});
 gl.getExtension('OES_element_index_uint');
-gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);
-gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+gl.enable(gl.DEPTH_TEST);// blend disabled — depth test handles occlusion cleanly
 gl.clearColor({BG_COLOR});
 gl.disable(gl.CULL_FACE);
-const vs=`attribute vec3 aPos,aColor,aExp,aTgt,aSpin;attribute float aShd;uniform float uP,uRX,uRY,uPS;uniform vec2 uScr;varying vec3 vC;varying float vA;mat3 rX(float a){{float c=cos(a),s=sin(a);return mat3(1,0,0,0,c,-s,0,s,c);}}mat3 rY(float a){{float c=cos(a),s=sin(a);return mat3(c,0,s,0,1,0,-s,0,c);}}mat3 rZ(float a){{float c=cos(a),s=sin(a);return mat3(c,-s,0,s,c,0,0,0,1);}}void main(){{float ep=uP<0.5?2.0*uP*uP:-1.0+(4.0-2.0*uP)*uP;float sf=1.0-ep;float h=mix(uPS*{CUBE_EXPLODED},uPS*{CUBE_ASSEMBLED},ep);vec3 p=rZ(aSpin.z*sf)*rY(aSpin.y*sf)*rX(aSpin.x*sf)*(aPos*h);vec3 wp=mix(aExp,aTgt,ep);vec3 r=rX(uRX)*rY(uRY)*p;float d=wp.z+r.z+400.0;float ps={FOV}.0/max(d,1.0);float s=mix(ps,1.0,ep);vec2 sc=(wp.xy+r.xy)*s/uScr;gl_Position=vec4(sc.x,-sc.y,(wp.z+r.z)/3000.0,1.0);vC=aColor*aShd;float df=clamp(1.0-abs(wp.z)/2000.0,0.15,1.0);vA=mix(df,1.0,ep);}}`;
+const vs=`attribute vec3 aPos,aColor,aExp,aTgt,aSpin;attribute float aShd;uniform float uP,uRX,uRY,uPS;uniform vec2 uScr;varying vec3 vC;varying float vA;mat3 rX(float a){{float c=cos(a),s=sin(a);return mat3(1,0,0,0,c,-s,0,s,c);}}mat3 rY(float a){{float c=cos(a),s=sin(a);return mat3(c,0,s,0,1,0,-s,0,c);}}mat3 rZ(float a){{float c=cos(a),s=sin(a);return mat3(c,-s,0,s,c,0,0,0,1);}}void main(){{float ep=uP<0.5?2.0*uP*uP:-1.0+(4.0-2.0*uP)*uP;float sf=1.0-ep;float h=mix(uPS*{CUBE_EXPLODED},uPS*{CUBE_ASSEMBLED},ep);vec3 p=rZ(aSpin.z*sf)*rY(aSpin.y*sf)*rX(aSpin.x*sf)*(aPos*h);vec3 wp=mix(aExp,aTgt,ep);vec3 r=rX(uRX)*rY(uRY)*p;float d=max(wp.z+r.z+800.0,50.0);float ps={FOV}.0/d;float s=mix(ps,1.0,ep);vec2 sc=(wp.xy+r.xy)*s/uScr;float zn=clamp((wp.z+r.z)/3000.0,-0.99,0.99);gl_Position=vec4(sc.x,-sc.y,zn,1.0);vC=aColor*aShd;vA=1.0;}}`;
 const fs=`precision mediump float;varying vec3 vC;varying float vA;void main(){{gl_FragColor=vec4(vC,vA);}}`;
 function mkS(t,s){{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}}
 const prg=gl.createProgram();gl.attachShader(prg,mkS(gl.VERTEX_SHADER,vs));gl.attachShader(prg,mkS(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prg);gl.useProgram(prg);
