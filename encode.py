@@ -214,7 +214,7 @@ def main():
 
     html = build_html(b64, w, h)
     out_path = Path(args.output)
-    out_path.write_text(html)
+    out_path.write_text(html, encoding='utf-8')
 
     print(f"Output:  {out_path} ({len(html)//1024} KB)")
     print(f"Cubes:   {n_active}")

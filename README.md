@@ -16,43 +16,121 @@ No libraries. No dependencies. One HTML file, one Python script to encode your a
 
 ---
 
-## Requirements
+## How to use it
 
-- Python 3
-- Pillow: `pip install Pillow`
-- A browser with WebGL support (all modern browsers)
+No coding experience needed. Follow every step exactly.
 
 ---
 
-## How to use it
+### Step 1 — Install Python (one time only)
 
-### 1. Prepare your pixel art
+Python is a free tool this script needs to run. You only install it once.
 
-Export your pixel art as a **PNG with transparent background** at its **native pixel resolution** — do not upscale it. The tool reads each pixel at 1:1 and maps it to a cube. Upscaling adds interpolated pixels that blur the effect.
+1. Go to **python.org/downloads**
+2. Click the big yellow Download button and run the installer
+3. **Windows users — critical:** on the first installer screen check the box that says **"Add Python to PATH"** before clicking anything else. If you miss this, Python will not work from the terminal.
+4. Click Install Now and let it finish
+5. When done, press the **Windows key**, search for **cmd**, and open **Command Prompt**
+6. Type this exactly and hit Enter:
 
-If your art has a background color rather than transparency, remove it in Photoshop, Aseprite, or any pixel editor before exporting.
-
-### 2. Encode your art
-
-Run `encode.py` with your PNG:
-
-```bash
-python encode.py your_art.png
+```
+pip install Pillow
 ```
 
-This reads every non-transparent pixel, packs position, color, and randomized explosion offsets into a compact binary blob, and outputs a new `output.html` ready to open in any browser.
+When it says "Successfully installed Pillow" you are done. You never have to do this again.
 
-That's it. No manual editing required.
+---
 
-### 3. Open in browser
+### Step 2 — Download this tool
 
-Open `output.html` directly in Chrome or Firefox. Scroll down to assemble, scroll up to explode.
+1. Click the green **Code** button at the top of this GitHub page
+2. Click **Download ZIP**
+3. Go to your Downloads folder and find `digivatar-pixel-assembly-main.zip`
+4. Right-click it and select **Extract All** then click **Extract**
+5. Move the extracted folder `digivatar-pixel-assembly-main` to your Desktop so it is easy to find
+
+---
+
+### Step 3 — Prepare your pixel art
+
+Your PNG needs two things:
+
+**Transparent background** — no solid color behind the art. If your file has a background color, remove it in Aseprite, Photoshop, or any pixel editor and re-export as PNG with transparency. The tool skips transparent pixels — that is how it knows what to turn into cubes.
+
+**Native pixel size** — do not upscale your art before running it. Use the original canvas size you drew it at. If you drew it at 64x64, run it at 64x64. Upscaling blurs the pixels and breaks the effect.
+
+**File name tip** — avoid spaces in your file name. `my art.png` will cause an error. Use `my_art.png` or `MyArt.png` instead.
+
+---
+
+### Step 4 — Run the tool
+
+1. Copy your PNG file into the `digivatar-pixel-assembly-main` folder on your Desktop
+2. Press the **Windows key**, search **cmd**, open **Command Prompt**
+3. Type this and hit Enter:
+
+```
+cd Desktop\digivatar-pixel-assembly-main
+```
+
+4. Now type this — replacing `YourFileName.png` with your actual file name — and hit Enter:
+
+```
+python encode.py YourFileName.png
+```
+
+Example: if your file is called `my_character.png` you would type:
+
+```
+python encode.py my_character.png
+```
+
+You should see something like this:
+
+```
+Encoding my_character.png...
+Image: 64x64px — 2840 active pixels (1256 transparent, skipped)
+Output: output.html (52 KB)
+Cubes: 2840
+Done — open output.html in Chrome or Firefox
+```
+
+If you see that — it worked.
+
+---
+
+### Step 5 — Open your result
+
+1. Go to the `digivatar-pixel-assembly-main` folder on your Desktop
+2. Find the file called `output.html`
+3. Right-click it and select **Open with** then **Google Chrome** or **Firefox**
+
+Scroll down — your pixel art assembles from 3D spinning cubes.
+Scroll up — it explodes back out.
+
+That is it. You can share the `output.html` file with anyone — it works in any browser with no internet connection needed.
+
+---
+
+## Troubleshooting
+
+**"python is not recognized"** — Python was not added to PATH during install. Uninstall Python, run the installer again, and check the "Add Python to PATH" box on the very first screen.
+
+**"No module named PIL"** — Run `pip install Pillow` in Command Prompt and try again.
+
+**"Cannot find path"** — The folder is not where you told the terminal to look. Make sure you moved `digivatar-pixel-assembly-main` to your Desktop, or adjust the cd command to match where your folder actually is.
+
+**"No non-transparent pixels found"** — Your PNG does not have a transparent background. Remove the background in your pixel editor and export again with transparency.
+
+**UnicodeEncodeError** — Download the latest `encode.py` from this repo and replace yours. This was a known Windows bug that has been fixed.
+
+**File name has spaces** — Rename your PNG to remove spaces. Use underscores instead: `my_art.png`
 
 ---
 
 ## Parameters
 
-All tunable values are at the top of the script and commented. You do not need to touch the HTML or GLSL.
+All tunable values are at the top of `encode.py` and commented. You do not need to touch the HTML or GLSL.
 
 ### Scatter / explosion
 
@@ -60,7 +138,7 @@ All tunable values are at the top of the script and commented. You do not need t
 |---|---|---|
 | `SCATTER_XY` | `8000` | World-space radius of XY scatter. Higher = cubes fly further off screen when exploded. |
 | `SCATTER_Z` | `2800` | How far cubes push toward the camera when exploded. Higher = closer to lens, appear larger. |
-| `SPIN_AMOUNT` | `π × 3` | How much each cube rotates during flight. Higher = more chaotic spin. |
+| `SPIN_AMOUNT` | `pi x 3` | How much each cube rotates during flight. Higher = more chaotic spin. |
 
 ### Assembly feel
 
@@ -75,19 +153,18 @@ All tunable values are at the top of the script and commented. You do not need t
 | Parameter | Default | What it does |
 |---|---|---|
 | `VIEWPORT_FILL` | `0.82` | How much of the viewport the assembled image fills. 1.0 = edge to edge. |
-| `CUBE_SIZE_ASSEMBLED` | `0.505` | Pixel cube size at assembled state relative to grid cell. Below 0.5 adds gap between pixels. Above 0.5 = overlap. |
+| `CUBE_SIZE_ASSEMBLED` | `0.505` | Pixel cube size at assembled state. Below 0.5 adds gap between pixels. Above 0.5 = overlap. |
 | `CUBE_SIZE_EXPLODED` | `8.0` | Cube size multiplier when fully exploded. Higher = bigger cubes near camera. |
+| `LABEL_ASSEMBLED` | `PIXEL PERFECT` | Text shown when fully assembled. Change this to your artwork name or artist name. |
 
 ### Visual
 
 | Parameter | Default | What it does |
 |---|---|---|
-| `FOV` | `700` | Perspective field of view in world units. Lower = more dramatic perspective. Higher = flatter. |
-| `BACKGROUND_COLOR` | `#080818` | Canvas background. Change to match your site. |
+| `FOV` | `700` | Perspective field of view in world units. Lower = more dramatic. Higher = flatter. |
+| `BACKGROUND_COLOR` | `#080818` | Canvas background color. Change to match your site. |
 
 ### Cube face shading
-
-Six faces, each with an independent brightness multiplier applied to the pixel color:
 
 | Face | Default |
 |---|---|
@@ -98,25 +175,17 @@ Six faces, each with an independent brightness multiplier applied to the pixel c
 | Left | `0.65` |
 | Bottom | `0.4` |
 
-Raise all values closer to `1.0` for a flatter look. Increase contrast between them for a more dramatic 3D read.
-
 ---
 
 ## Embedding in a webpage
 
-Instead of running as a standalone fullscreen page, you can drop it into any site so the effect triggers as the user scrolls to that section.
-
 Run the embed script:
 
-```bash
+```
 python embed.py output.html
 ```
 
-This outputs `embed.html` — a self-contained `<section>` + `<canvas>` + `<script>` block you paste directly into your page HTML. The scroll listener is automatically rewritten to track the section's position in the page rather than the wheel event.
-
-Works with plain HTML, WordPress, Webflow, or React.
-
-**Performance note:** the B64 data blob is ~280KB. For production use, move it to an external file so it loads async and does not block page render. The embed script handles this automatically — it outputs a `digivatar-data.js` alongside `embed.html`.
+This outputs `embed.html` — paste it into your page HTML. Works with plain HTML, WordPress, Webflow, or React.
 
 ---
 
@@ -126,34 +195,22 @@ Works with plain HTML, WordPress, Webflow, or React.
 |---|---|
 | M1/M2/M3 Mac | 60fps |
 | Modern discrete GPU (RTX, RX series) | 60fps |
-| Integrated Intel/AMD (2016 and newer) | 45–60fps |
+| Integrated Intel/AMD (2016 and newer) | 45-60fps |
 | Older integrated graphics | 30fps |
 | Mobile | Supported, varies by device |
-
-The renderer uses a single `gl.drawElements()` call per frame. All vertex math runs in GLSL on the GPU. CPU cost per frame is minimal.
-
----
-
-## Swapping art
-
-The only thing that changes between artworks is the encoded data blob. If you want to swap your art manually without the script:
-
-1. Run `encode.py your_new_art.png --blob-only` — prints just the B64 string
-2. In `output.html`, find `const B64="..."` and replace the string between the quotes
-3. If your new art is a different canvas size than 154×154, also update `W=154,H=154` to match
 
 ---
 
 ## Example art
 
-The included demo uses original pixel art by [Digivatar](https://github.com/Master-Zomon).  
-`example/CyberPunkDigi_NOBG_Native.png` — 154×154 native resolution, transparent background.
+The included demo uses original pixel art by [Digivatar](https://github.com/Master-Zomon).
+`example/CyberPunkDigi_NOBG_Native.png` — 154x154 native resolution, transparent background.
 
 ---
 
 ## License
 
-MIT — free to use, modify, and distribute.  
+MIT — free to use, modify, and distribute.
 If this helped your project, a shoutout to [Digivatar](https://github.com/Master-Zomon) is always appreciated.
 
 ---
