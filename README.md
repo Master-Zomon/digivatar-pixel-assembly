@@ -24,20 +24,24 @@ No coding experience needed. Follow every step exactly.
 
 ### Step 1 — Install Python (one time only)
 
+> **Never used Python before?** That is totally fine. Python is not an app you open and click around in — it runs invisibly in the background when you type commands. Think of it like installing a plugin that your terminal uses. You will never actually "open" Python. [Watch this 3-minute beginner install guide](https://www.youtube.com/results?search_query=how+to+install+python+on+windows+for+beginners) if you want to see exactly what to expect before you start.
+
 Python is a free tool this script needs to run. You only install it once.
 
 1. Go to **python.org/downloads**
 2. Click the big yellow Download button and run the installer
-3. **Windows users — critical:** on the first installer screen check the box that says **"Add Python to PATH"** before clicking anything else. If you miss this, Python will not work from the terminal.
-4. Click Install Now and let it finish
-5. When done, press the **Windows key**, search for **cmd**, and open **Command Prompt**
+3. **Windows users — critical:** on the very first installer screen, check the box that says **"Add Python to PATH"** before you click anything else. It is easy to miss and if you skip it Python will not work. See the image below if you are unsure which box.
+4. Click **Install Now** and let it finish — no need to change any other settings
+5. When done, press the **Windows key**, type **cmd**, and open **Command Prompt** — this is just a text window where you type instructions
 6. Type this exactly and hit Enter:
 
 ```
 pip install Pillow
 ```
 
-When it says "Successfully installed Pillow" you are done. You never have to do this again.
+When you see "Successfully installed Pillow" you are done. You will never have to do this again.
+
+> **What is Command Prompt?** It is a plain text window that lets you run tools by typing commands. It looks old school but it is just a way to run scripts. You are not breaking anything by using it.
 
 ---
 
