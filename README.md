@@ -24,7 +24,7 @@ No coding experience needed. Follow every step exactly.
 
 ### Step 1 — Install Python (one time only)
 
-> **Never used Python before?** That is totally fine. Python is not an app you open and click around in — it runs invisibly in the background when you type commands. Think of it like installing a plugin that your terminal uses. You will never actually "open" Python. [Watch this 3-minute beginner install guide](https://www.youtube.com/results?search_query=how+to+install+python+on+windows+for+beginners) if you want to see exactly what to expect before you start.
+> **Never used Python before?** That is totally fine. Python is not an app you open and click around in — it runs invisibly in the background when you type commands. Think of it like installing a plugin that your terminal uses. You will never actually "open" Python. [Watch this beginner Python install guide for Windows](https://www.youtube.com/watch?v=uge4A1LHsNk) if you want to see exactly what to expect before you start — it covers the whole thing in under 9 minutes.
 
 Python is a free tool this script needs to run. You only install it once.
 
