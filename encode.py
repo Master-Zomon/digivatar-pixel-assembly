@@ -79,7 +79,7 @@ SHADE_LEFT      = 0.65
 
 # Label text
 LABEL_ASSEMBLE  = 'SCROLL TO ASSEMBLE'
-LABEL_ASSEMBLED = 'ASSEMBLED'          # shown at 100% — change to your name/title
+LABEL_ASSEMBLED = 'PIXEL PERFECT'  # ← change this to your artist name or title          # shown at 100% — change to your name/title
 LABEL_UI        = 'SCROLL ↑↓ TO ASSEMBLE'
 
 # ─────────────────────────────────────────────
