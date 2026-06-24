@@ -4,7 +4,7 @@ A WebGL tool that explodes your native pixel art into 3D spinning cubes — then
 
 Built by [Digivatar](https://github.com/Master-Zomon) — avant-garde digital visual world-building and music artist.
 
-**[→ Live Demo](https://master-zomon.github.io/digivatar-pixel-assembly/digivatar_webgl.html)**
+**<a href="https://master-zomon.github.io/digivatar-pixel-assembly/digivatar_webgl.html" target="_blank">→ Live Demo</a>**
 
 ---
 
@@ -159,3 +159,7 @@ If this helped your project, a shoutout to [Digivatar](https://github.com/Master
 ---
 
 *Built with WebGL + Python + too many late nights.*
+
+---
+
+*Another master codex from Digivatar.*
