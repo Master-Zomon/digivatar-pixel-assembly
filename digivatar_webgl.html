@@ -7,12 +7,9 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#080818;overflow:hidden}
 canvas{display:block;width:100vw;height:100vh}
-#ui{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font:11px monospace;letter-spacing:.15em;pointer-events:none;background:rgba(8,8,24,0.65);padding:6px 24px;border-radius:20px;z-index:10;backdrop-filter:blur(4px);text-align:center;width:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-#lbl{position:fixed;top:18px;left:50%;transform:translateX(-50%);color:rgba(180,140,255,0.9);font:11px monospace;letter-spacing:.2em;pointer-events:none;background:rgba(8,8,24,0.65);padding:6px 18px;border-radius:20px;z-index:10;backdrop-filter:blur(4px)}
-@media(max-width:768px){
-#lbl{font-size:14px;padding:8px 20px;letter-spacing:.1em}
-#ui{font-size:13px;padding:8px 20px;width:90vw;letter-spacing:.08em}
-}</style>
+#ui{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.7);font-family:monospace;font-size:clamp(13px,2.2vw,15px);letter-spacing:.1em;pointer-events:none;background:rgba(8,8,24,0.65);padding:clamp(8px,1.5vw,10px) clamp(16px,3vw,24px);border-radius:20px;z-index:10;backdrop-filter:blur(4px);text-align:center;width:min(420px,92vw);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#lbl{position:fixed;top:18px;left:50%;transform:translateX(-50%);color:rgba(180,140,255,0.9);font-family:monospace;font-size:clamp(14px,2.5vw,16px);letter-spacing:.15em;pointer-events:none;background:rgba(8,8,24,0.65);padding:clamp(8px,1.5vw,10px) clamp(16px,3vw,22px);border-radius:20px;z-index:10;backdrop-filter:blur(4px)}
+</style>
 </head>
 <body>
 <canvas id="c"></canvas>
