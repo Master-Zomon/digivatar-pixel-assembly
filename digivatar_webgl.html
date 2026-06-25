@@ -134,7 +134,7 @@ function draw(){
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,iB);
   gl.drawElements(gl.TRIANGLES,N*NI,gl.UNSIGNED_INT,0);
   const pp=Math.max(0,Math.min(1,prog));
-  document.getElementById('lbl').textContent=pp<.03?'SCROLL TO ASSEMBLE':pp>.97?'PIXEL PERFECT':`ASSEMBLING... ${Math.round(pp*100)}%`;
+  document.getElementById('lbl').textContent=pp<.03?'SCROLL TO ASSEMBLE':pp>.97?'DIGIVATAR':`ASSEMBLING... ${Math.round(pp*100)}%`;
   requestAnimationFrame(draw);
 }
 draw();
