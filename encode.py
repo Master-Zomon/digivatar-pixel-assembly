@@ -49,37 +49,27 @@ except ImportError:
 # PARAMETERS — tweak these to change the effect
 # ─────────────────────────────────────────────
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  S C A T T E R  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# Controls how far pixels flee their grid positions when exploded.
-#
+# Scatter / explosion
 SCATTER_XY      = 8000      # World-space XY scatter radius when exploded
 SCATTER_Z       = 2800      # Z push toward camera when exploded (positive = toward viewer)
 SPIN_AMOUNT     = math.pi * 3  # Max local spin per cube during flight
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  F E E L  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# The timing and responsiveness of the animation. LERP_SPEED is the soul.
-#
+# Assembly feel
 SCROLL_SPEED    = 0.0004    # Progress per scroll tick (lower = more scroll needed)
 LERP_SPEED      = 0.055     # Animation smoothing (higher = snappier)
 SNAP_THRESHOLD  = 0.001     # Lock to final state when this close to target
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  A S S E M B L E D  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# How the pixel art looks and reads when fully converged.
-#
+# Assembled image
 VIEWPORT_FILL   = 0.82      # Fraction of viewport the assembled image fills
 CUBE_ASSEMBLED  = 0.505     # Cube size at assembled state (relative to grid cell)
 CUBE_EXPLODED   = 8.0       # Cube size multiplier when exploded
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  V I S U A L  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# Perspective, background, and cube face lighting.
-#
+# Visual
 FOV             = 700       # Perspective FOV in world units
 BG_COLOR        = '0.031,0.031,0.094,1'  # WebGL clearColor RGBA (0–1)
 BG_HEX          = '#080818' # CSS background color
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  C U B E  S H A D I N G  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# Six faces, each with its own brightness. Controls the 3D read of each cube.
-#
+# Cube face shading (brightness multiplier per face, applied to pixel color)
 SHADE_FRONT     = 1.0
 SHADE_BACK      = 0.9
 SHADE_TOP       = 0.6
@@ -233,3 +223,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# ◈ end of codex — Digivatar

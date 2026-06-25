@@ -79,3 +79,14 @@ One bold line. Peaks loud. Everything after drops to quiet.
 ```
 # ◈ DIGIVATAR — Another master codex from Digivatar | digivatar.com
 ```
+
+---
+
+## Closing mark — last line of every file
+
+```
+// ◈ end of codex — Digivatar
+```
+```
+# ◈ end of codex — Digivatar
+```
