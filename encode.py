@@ -15,6 +15,9 @@
 #  ◈ Avant-garde digital visual world-building and music artist
 #  ◈ github.com/Master-Zomon  |  digivatar.com
 # ───────────────────────────────────────────────────────────────────
+#
+# ◈ DIGIVATAR — digivatar-pixel-assembly — encode.py
+#
 
 """
 digivatar-pixel-assembly — encode.py
