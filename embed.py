@@ -72,10 +72,22 @@ def extract_styles(content):
     return match.group(1) if match else ''
 
 
-def extract_element_text(content, element_id):
-    """Extract the inner text of an element by ID."""
-    match = re.search(rf'<div id="{element_id}">(.*?)</div>', content, re.DOTALL)
-    return match.group(1) if match else ''
+def extract_lbl_text(content):
+    """Extract the label text from #lbl element."""
+    match = re.search(r'<div id="lbl">([^<]*)</div>', content)
+    return match.group(1).strip() if match else 'SCROLL TO ASSEMBLE'
+
+
+def extract_controls_html(content):
+    """
+    Extract the full #ui controls block (toggle button + CRT panel).
+    This is the complete structure — not just inner text.
+    """
+    match = re.search(r'(<div id="ui">.*?</div>\s*</div>\s*</div>)', content, re.DOTALL)
+    if match:
+        return match.group(1)
+    # fallback — return a minimal toggle if structure not found
+    return '<div id="ui"><div id="ui-toggle">C O N T R O L S &nbsp;&#9662;</div></div>'
 
 
 # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  R E W R I T E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
@@ -94,7 +106,6 @@ def rewrite_canvas_sizing(script, section_id):
         'canvas.height=window.innerHeight;',
         f'canvas.height=document.getElementById("{section_id}").offsetHeight;'
     )
-    # also fix the resize listener
     script = script.replace(
         "window.addEventListener('resize', () => {\n  canvas.width  = window.innerWidth;\n  canvas.height = window.innerHeight;\n});",
         f"window.addEventListener('resize', () => {{\n  const sec = document.getElementById('{section_id}');\n  canvas.width  = sec.offsetWidth;\n  canvas.height = sec.offsetHeight;\n}});"
@@ -107,12 +118,11 @@ def rewrite_scroll_listener(script):
     Replace the wheel event listener with a scroll position listener.
     Assembly progress is driven by how far the section has scrolled into view.
     """
-    # match the wheel listener block
     wheel_pattern = r"window\.addEventListener\('wheel'.*?\}\s*,\s*\{[^}]*\}\s*\)\s*;"
     scroll_listener = (
         "window.addEventListener('scroll', () => {\n"
         "  const rect     = section.getBoundingClientRect();\n"
-        "  const scrolled = -rect.top / rect.height;   // 0 = section entering, 1 = fully scrolled\n"
+        "  const scrolled = -rect.top / rect.height;\n"
         "  tgt = Math.max(0, Math.min(1, scrolled));\n"
         "});"
     )
@@ -123,34 +133,89 @@ def rewrite_scroll_listener(script):
 
 
 def scope_styles(styles, section_id):
-    """Scope CSS selectors to the section so they don't leak into the host page."""
-    styles = styles.replace('body{',    f'#{section_id}{{')
-    styles = styles.replace('canvas{',  f'#{section_id} canvas{{')
-    styles = styles.replace('#ui{',     f'#{section_id}-ui{{')
-    styles = styles.replace('#lbl{',    f'#{section_id}-lbl{{')
+    """
+    Scope CSS selectors to the section so they don't leak into the host page.
+    Covers all CRT panel IDs introduced in the current controls system.
+    """
+    replacements = [
+        ('body {',         f'#{section_id} {{'),
+        ('canvas {',       f'#{section_id} canvas {{'),
+        ('#lbl {',         f'#{section_id}-lbl {{'),
+        ('#ui {',          f'#{section_id}-ui {{'),
+        ('#ui-toggle {',   f'#{section_id}-ui-toggle {{'),
+        ('#ui-toggle:hover', f'#{section_id}-ui-toggle:hover'),
+        ('#crt-wrap {',    f'#{section_id}-crt-wrap {{'),
+        ('#crt-panel {',   f'#{section_id}-crt-panel {{'),
+        ('#crt-panel .s {',f'#{section_id}-crt-panel .s {{'),
+        ('#crt-panel .s:first-child {', f'#{section_id}-crt-panel .s:first-child {{'),
+        ('#crt-scan {',    f'#{section_id}-crt-scan {{'),
+        ('#crt-noise-a,',  f'#{section_id}-crt-noise-a,'),
+        ('#crt-noise-b {', f'#{section_id}-crt-noise-b {{'),
+        ('#crt-noise-a {', f'#{section_id}-crt-noise-a {{'),
+        ('#line-a {',      f'#{section_id}-line-a {{'),
+        ('#line-b {',      f'#{section_id}-line-b {{'),
+        ('#line-c {',      f'#{section_id}-line-c {{'),
+        ('#line-d {',      f'#{section_id}-line-d {{'),
+        ('#line-e {',      f'#{section_id}-line-e {{'),
+        ('#line-a .crt-line-inner {', f'#{section_id}-line-a .crt-line-inner {{'),
+        ('#line-b .crt-line-inner {', f'#{section_id}-line-b .crt-line-inner {{'),
+        ('#line-c .crt-line-inner {', f'#{section_id}-line-c .crt-line-inner {{'),
+        ('#line-d .crt-line-inner {', f'#{section_id}-line-d .crt-line-inner {{'),
+        ('#line-e .crt-line-inner {', f'#{section_id}-line-e .crt-line-inner {{'),
+        ('#crt-wrap.phase-dot',    f'#{section_id}-crt-wrap.phase-dot'),
+        ('#crt-wrap.phase-expand', f'#{section_id}-crt-wrap.phase-expand'),
+        ('#crt-wrap.closing',      f'#{section_id}-crt-wrap.closing'),
+    ]
+    for old, new in replacements:
+        styles = styles.replace(old, new)
     return styles
 
 
 def update_element_ids(script, section_id):
-    """Update getElementById calls to use the scoped element IDs."""
-    script = script.replace(
-        "document.getElementById('lbl')",
-        f"document.getElementById('{section_id}-lbl')"
-    )
-    script = script.replace(
-        "document.getElementById('ui')",
-        f"document.getElementById('{section_id}-ui')"
-    )
+    """
+    Update all getElementById calls to use the scoped element IDs.
+    Covers the label, toggle button, and CRT wrap — all active JS references.
+    """
+    id_map = {
+        "getElementById('lbl')":        f"getElementById('{section_id}-lbl')",
+        "getElementById('ui-toggle')":  f"getElementById('{section_id}-ui-toggle')",
+        "getElementById('crt-wrap')":   f"getElementById('{section_id}-crt-wrap')",
+    }
+    for old, new in id_map.items():
+        script = script.replace(f'document.{old}', f'document.{new}')
     return script
 
 
 # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  B U I L D  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 # Assemble the final embed block.
 
-def build_embed(script, styles, lbl_text, ui_text, data_file, section_id):
+def scope_html_ids(controls_html, section_id):
+    """
+    Prefix all element IDs and matching data attributes in the controls HTML
+    so they match the scoped CSS and JS.
+    """
+    id_map = {
+        'id="ui"':          f'id="{section_id}-ui"',
+        'id="ui-toggle"':   f'id="{section_id}-ui-toggle"',
+        'id="crt-wrap"':    f'id="{section_id}-crt-wrap"',
+        'id="crt-panel"':   f'id="{section_id}-crt-panel"',
+        'id="crt-scan"':    f'id="{section_id}-crt-scan"',
+        'id="crt-noise-a"': f'id="{section_id}-crt-noise-a"',
+        'id="crt-noise-b"': f'id="{section_id}-crt-noise-b"',
+        'id="line-a"':      f'id="{section_id}-line-a"',
+        'id="line-b"':      f'id="{section_id}-line-b"',
+        'id="line-c"':      f'id="{section_id}-line-c"',
+        'id="line-d"':      f'id="{section_id}-line-d"',
+        'id="line-e"':      f'id="{section_id}-line-e"',
+    }
+    for old, new in id_map.items():
+        controls_html = controls_html.replace(old, new)
+    return controls_html
+
+
+def build_embed(script, styles, lbl_text, controls_html, data_file, section_id):
     """Build the complete embeddable HTML block."""
 
-    # add section reference at top of script
     script = f"const section = document.getElementById('{section_id}');\n\n" + script
 
     return f'''<!--
@@ -177,7 +242,7 @@ def build_embed(script, styles, lbl_text, ui_text, data_file, section_id):
 <section id="{section_id}">
   <canvas id="c"></canvas>
   <div id="{section_id}-lbl">{lbl_text}</div>
-  <div id="{section_id}-ui">{ui_text}</div>
+  {controls_html}
 </section>
 
 <script src="{data_file}"></script>
@@ -188,31 +253,18 @@ def build_embed(script, styles, lbl_text, ui_text, data_file, section_id):
 
 
 # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E N T R Y  P O I N T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# Parse args, run conversion, write output files.
 
 def main():
     parser = argparse.ArgumentParser(
         description='Convert standalone pixel assembly HTML to a page-embed section.'
     )
-    parser.add_argument(
-        'input',
-        help='Path to output.html from encode.py'
-    )
-    parser.add_argument(
-        '--output', '-o',
-        default='embed_section.html',
-        help='Output filename for the embed block (default: embed_section.html)'
-    )
-    parser.add_argument(
-        '--data-file',
-        default='digivatar-data.js',
-        help='External data JS filename (default: digivatar-data.js)'
-    )
-    parser.add_argument(
-        '--section-id',
-        default='pixel-assembly-section',
-        help='HTML ID for the section element (default: pixel-assembly-section)'
-    )
+    parser.add_argument('input', help='Path to output.html from encode.py')
+    parser.add_argument('--output', '-o', default='embed_section.html',
+        help='Output filename for the embed block (default: embed_section.html)')
+    parser.add_argument('--data-file', default='digivatar-data.js',
+        help='External data JS filename (default: digivatar-data.js)')
+    parser.add_argument('--section-id', default='pixel-assembly-section',
+        help='HTML ID for the section element (default: pixel-assembly-section)')
     args = parser.parse_args()
 
     in_path = Path(args.input)
@@ -224,20 +276,21 @@ def main():
     content = in_path.read_text(encoding='utf-8')
 
     # ── extract ────────────────────────────────────────────────────────
-    b64      = extract_b64(content)
-    script   = extract_script(content)
-    styles   = extract_styles(content)
-    lbl_text = extract_element_text(content, 'lbl') or 'SCROLL TO ASSEMBLE'
-    ui_text  = extract_element_text(content, 'ui')  or 'SCROLL TO ASSEMBLE'
+    b64          = extract_b64(content)
+    script       = extract_script(content)
+    styles       = extract_styles(content)
+    lbl_text     = extract_lbl_text(content)
+    controls_html = extract_controls_html(content)
 
     print(f"Extracted: {len(b64) // 1024} KB pixel data, {len(script) // 1024} KB script")
 
     # ── rewrite ────────────────────────────────────────────────────────
-    script = script.replace(f'const B64 = "{b64}";', '/* B64 loaded from external data file */')
-    script = rewrite_canvas_sizing(script, args.section_id)
-    script = rewrite_scroll_listener(script)
-    script = update_element_ids(script, args.section_id)
-    styles = scope_styles(styles, args.section_id)
+    script        = script.replace(f'const B64 = "{b64}";', '/* B64 loaded from external data file */')
+    script        = rewrite_canvas_sizing(script, args.section_id)
+    script        = rewrite_scroll_listener(script)
+    script        = update_element_ids(script, args.section_id)
+    styles        = scope_styles(styles, args.section_id)
+    controls_html = scope_html_ids(controls_html, args.section_id)
 
     # ── write data file ────────────────────────────────────────────────
     data_path = Path(args.data_file)
@@ -245,7 +298,7 @@ def main():
     print(f"Data file: {data_path} ({data_path.stat().st_size // 1024} KB)")
 
     # ── write embed block ──────────────────────────────────────────────
-    embed    = build_embed(script, styles, lbl_text, ui_text, args.data_file, args.section_id)
+    embed    = build_embed(script, styles, lbl_text, controls_html, args.data_file, args.section_id)
     out_path = Path(args.output)
     out_path.write_text(embed, encoding='utf-8')
     print(f"Embed block: {out_path}")

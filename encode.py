@@ -22,7 +22,8 @@
 digivatar-pixel-assembly — encode.py
 =====================================
 Converts a native pixel art PNG (transparent background) into a
-self-contained WebGL HTML file with the 3D cube assembly effect.
+self-contained WebGL HTML file with the full 3D cube assembly effect,
+including pixel drag-and-drop when assembled.
 
 Usage:
     python encode.py your_art.png
@@ -67,12 +68,11 @@ CUBE_ASSEMBLED  = 0.505         # cube size at rest — slight gap between pixel
 CUBE_EXPLODED   = 8.0           # cube size multiplier at full scatter
 LABEL_ASSEMBLED = 'PIXEL PERFECT'  # ← change this to your artist name or title
 
-# ── visual — perspective, background, labels ──
+# ── visual — perspective and background ──
 FOV             = 700           # perspective FOV in world units (lower = more dramatic)
 BG_COLOR        = '0.031,0.031,0.094,1'  # WebGL clearColor RGBA (0–1 range)
 BG_HEX          = '#080818'     # CSS background — keep in sync with BG_COLOR
 LABEL_ASSEMBLE  = 'SCROLL TO ASSEMBLE'
-LABEL_UI        = 'SCROLL TO ASSEMBLE · DRAG TO ROTATE'
 
 # ── cube face shading — brightness multiplier per face ──
 # Controls the 3D read of each cube. Front brightest, bottom darkest.
@@ -102,7 +102,7 @@ def clamp_int16(value):
     return max(-32768, min(32767, value))
 
 
-# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E N C O D E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E N C O D E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 # Read the PNG, skip transparent pixels, pack each active pixel into
 # an 18-byte binary record: position, color, scatter offset, spin axis.
 
@@ -146,7 +146,7 @@ def encode_pixels(img_path):
         print("       Make sure your PNG has a transparent background, not a solid color.")
         sys.exit(1)
 
-    print(f"Image:  {w}×{h}px")
+    print(f"Image:  {w}x{h}px")
     print(f"Active: {len(active)} pixels ({w * h - len(active)} transparent, skipped)")
 
     # pack each pixel into 18-byte binary record
@@ -204,6 +204,7 @@ def build_html(b64, w, h):
     * {{ margin: 0; padding: 0; box-sizing: border-box; }}
     body {{ background: {BG_HEX}; overflow: hidden; }}
     canvas {{ display: block; width: 100vw; height: 100vh; }}
+
     #lbl {{
       position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
       color: rgba(180,140,255,0.9); font: 11px monospace; letter-spacing: .2em;
@@ -211,17 +212,158 @@ def build_html(b64, w, h):
       padding: 6px 18px; border-radius: 20px; z-index: 10;
       backdrop-filter: blur(4px);
     }}
+
+    /* ── CRT controls panel ── */
     #ui {{
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      color: rgba(255,255,255,0.7); font: 11px monospace; letter-spacing: .15em;
-      pointer-events: none; background: rgba(8,8,24,0.65);
-      padding: 6px 24px; border-radius: 20px; z-index: 10;
-      backdrop-filter: blur(4px); text-align: center; width: 420px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font: 11px monospace; letter-spacing: .18em;
+      z-index: 10; text-align: center; user-select: none;
+      width: 340px;
     }}
+    #ui-toggle {{
+      display: inline-block;
+      color: rgba(180,140,255,0.9);
+      background: rgba(8,8,24,0.75);
+      padding: 6px 22px; border-radius: 20px;
+      cursor: pointer;
+      border: 1px solid rgba(180,140,255,0.25);
+      letter-spacing: .2em;
+      white-space: nowrap;
+      user-select: none;
+    }}
+    #ui-toggle:hover {{ border-color: rgba(180,140,255,0.7); }}
+    #crt-wrap {{
+      margin-top: 8px;
+      position: relative;
+      width: 100%;
+      display: none;
+      overflow: hidden;
+      border-radius: 14px;
+    }}
+    #crt-panel {{
+      width: 100%;
+      background: rgba(8,8,24,0.88);
+      border: 1px solid rgba(180,140,255,0.2);
+      border-radius: 14px;
+      padding: 16px 22px;
+      color: rgba(255,255,255,0.8);
+      line-height: 2.2;
+      font-size: 10px;
+      letter-spacing: .15em;
+      position: relative;
+      z-index: 1;
+    }}
+    #crt-panel .s {{ color: rgba(200,160,255,1.0); font-size: 9px; letter-spacing: .3em; margin-top: 6px; }}
+    #crt-panel .s:first-child {{ margin-top: 0; }}
+    #crt-scan {{
+      position: absolute; inset: 0; border-radius: 14px;
+      pointer-events: none; z-index: 5;
+      background: repeating-linear-gradient(
+        0deg, transparent 0px, transparent 2px,
+        rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px
+      );
+    }}
+    @keyframes noise-shift-a {{
+      0%   {{ transform: translate(0,0);     }} 20% {{ transform: translate(-3px,2px);  }}
+      40%  {{ transform: translate(2px,-3px);}} 60% {{ transform: translate(-2px,-1px); }}
+      80%  {{ transform: translate(3px,2px); }} 100%{{ transform: translate(0,0);       }}
+    }}
+    @keyframes noise-shift-b {{
+      0%   {{ transform: translate(0,0);     }} 20% {{ transform: translate(2px,-2px);  }}
+      40%  {{ transform: translate(-3px,3px);}} 60% {{ transform: translate(1px,2px);   }}
+      80%  {{ transform: translate(-2px,-3px);}} 100%{{ transform: translate(0,0);      }}
+    }}
+    #crt-noise-a, #crt-noise-b {{
+      position: absolute; inset: -4px; border-radius: 14px;
+      pointer-events: none; z-index: 6;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }}
+    #crt-noise-a {{ opacity: 0.11; animation: noise-shift-a 0.08s steps(1) infinite; }}
+    #crt-noise-b {{ opacity: 0.08; animation: noise-shift-b 0.13s steps(1) infinite; animation-delay: -0.04s; }}
+    @keyframes drift-down {{ from {{ top: -2px; }} to {{ top: 102%; }} }}
+    @keyframes pulse-a {{ 0%,100%{{opacity:.14}} 30%{{opacity:.04}} 60%{{opacity:.18}} 80%{{opacity:.02}} }}
+    @keyframes pulse-b {{ 0%,100%{{opacity:.11}} 20%{{opacity:.16}} 50%{{opacity:.01}} 75%{{opacity:.13}} }}
+    @keyframes pulse-c {{ 0%,100%{{opacity:.09}} 15%{{opacity:.15}} 45%{{opacity:.03}} 70%{{opacity:.12}} }}
+    @keyframes pulse-d {{ 0%,100%{{opacity:.10}} 25%{{opacity:.02}} 55%{{opacity:.14}} 85%{{opacity:.05}} }}
+    @keyframes pulse-e {{ 0%,100%{{opacity:.12}} 35%{{opacity:.17}} 60%{{opacity:.03}} 90%{{opacity:.09}} }}
+    .crt-line {{ position: absolute; left: 0; right: 0; height: 1px; pointer-events: none; z-index: 4; }}
+    #line-a {{ color: rgba(180,140,255,0.9); animation: drift-down 18s linear infinite, pulse-a 4.2s ease-in-out infinite; animation-delay: -2s, 0s; }}
+    #line-b {{ color: rgba(80,220,255,0.9);  animation: drift-down 14s linear infinite, pulse-b 5.1s ease-in-out infinite; animation-delay: -5s, 0s; }}
+    #line-c {{ color: rgba(255,255,255,0.9); animation: drift-down 22s linear infinite, pulse-c 3.7s ease-in-out infinite; animation-delay: -9s, 0s; }}
+    #line-d {{ color: rgba(255,68,255,0.9);  animation: drift-down 28s linear infinite, pulse-d 6.5s ease-in-out infinite; animation-delay: -3s, 0s; }}
+    #line-e {{ color: rgba(200,160,255,0.9); animation: drift-down 16s linear infinite, pulse-e 4.8s ease-in-out infinite; animation-delay: -12s, 0s; }}
+    .crt-line-inner {{
+      display: block; width: 100%; height: 1px;
+      background-image: repeating-linear-gradient(90deg,
+        currentColor 0px, currentColor 11px, transparent 11px, transparent 14px,
+        currentColor 14px, currentColor 23px, transparent 23px, transparent 27px,
+        currentColor 27px, currentColor 30px, transparent 30px, transparent 35px,
+        currentColor 35px, currentColor 41px, transparent 41px, transparent 46px,
+        currentColor 46px, currentColor 52px, transparent 52px, transparent 58px,
+        currentColor 58px, currentColor 61px, transparent 61px, transparent 67px);
+      background-size: 67px 1px;
+    }}
+    @keyframes jitter-a {{
+      0%,100% {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+      61%     {{ transform: scaleX(0.92) translateX(4px);  filter: brightness(2);   }}
+      61.3%   {{ transform: scaleX(1.04) translateX(-3px); filter: brightness(1);   }}
+      61.6%   {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+    }}
+    @keyframes jitter-b {{
+      0%,100% {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+      55%     {{ transform: scaleX(0.88) translateX(-6px); filter: brightness(2.5); }}
+      55.4%   {{ transform: scaleX(1.06) translateX(4px);  filter: brightness(1);   }}
+      55.8%   {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+    }}
+    @keyframes jitter-c {{
+      0%,100% {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+      38%     {{ transform: scaleX(0.95) translateX(7px);  filter: brightness(3);   }}
+      38.2%   {{ transform: scaleX(0.98) translateX(-2px); filter: brightness(1);   }}
+      38.5%   {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+    }}
+    @keyframes jitter-d {{
+      0%,100% {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+      73%     {{ transform: scaleX(0.91) translateX(-5px); filter: brightness(2.2); }}
+      73.3%   {{ transform: scaleX(1.03) translateX(3px);  filter: brightness(1);   }}
+      73.7%   {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+    }}
+    @keyframes jitter-e {{
+      0%,100% {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+      44%     {{ transform: scaleX(0.96) translateX(8px);  filter: brightness(2.8); }}
+      44.25%  {{ transform: scaleX(1.02) translateX(-4px); filter: brightness(1);   }}
+      44.6%   {{ transform: scaleX(1)    translateX(0);    filter: brightness(1);   }}
+    }}
+    #line-a .crt-line-inner {{ animation: jitter-a 7.3s steps(1) infinite; }}
+    #line-b .crt-line-inner {{ animation: jitter-b 5.9s steps(1) infinite; animation-delay: -1.2s; }}
+    #line-c .crt-line-inner {{ animation: jitter-c 8.8s steps(1) infinite; animation-delay: -3.5s; }}
+    #line-d .crt-line-inner {{ animation: jitter-d 6.4s steps(1) infinite; animation-delay: -0.8s; }}
+    #line-e .crt-line-inner {{ animation: jitter-e 9.1s steps(1) infinite; animation-delay: -4.2s; }}
+    @keyframes crt-dot {{
+      0%   {{ transform: scaleX(0.008) scaleY(0.015); opacity: 0; filter: brightness(12) saturate(0) blur(2px); }}
+      40%  {{ transform: scaleX(0.008) scaleY(0.015); opacity: 1; filter: brightness(16) saturate(0) blur(1px); }}
+      100% {{ transform: scaleX(1)     scaleY(0.015); opacity: 1; filter: brightness(8)  saturate(0); }}
+    }}
+    @keyframes crt-expand {{
+      0%   {{ transform: scaleX(1) scaleY(0.015); filter: brightness(8) saturate(0); }}
+      30%  {{ transform: scaleX(1) scaleY(0.08);  filter: brightness(4) saturate(0.3); }}
+      100% {{ transform: scaleX(1) scaleY(1);     filter: brightness(1) saturate(1); }}
+    }}
+    @keyframes crt-shutoff {{
+      0%   {{ transform: scaleX(1)     scaleY(1);     opacity: 1; filter: brightness(1)  saturate(1); }}
+      20%  {{ transform: scaleX(1)     scaleY(0.015); opacity: 1; filter: brightness(10) saturate(0); }}
+      50%  {{ transform: scaleX(1)     scaleY(0.015); opacity: 1; filter: brightness(14) saturate(0); }}
+      75%  {{ transform: scaleX(0.008) scaleY(0.015); opacity: 1; filter: brightness(18) saturate(0) blur(1px); }}
+      88%  {{ transform: scaleX(0.008) scaleY(0.015); opacity: 0.7; filter: brightness(22) blur(2px); }}
+      100% {{ transform: scaleX(0.008) scaleY(0.015); opacity: 0;   filter: brightness(0); }}
+    }}
+    #crt-wrap.phase-dot    {{ display: block; transform-origin: center; animation: crt-dot     0.25s ease-out                    forwards; }}
+    #crt-wrap.phase-expand {{                 transform-origin: center; animation: crt-expand  0.32s cubic-bezier(0.22,1,0.36,1) forwards; }}
+    #crt-wrap.closing      {{                 transform-origin: center; animation: crt-shutoff 0.22s cubic-bezier(0.6,0,1,0.4)   forwards; }}
+
     @media (max-width: 768px) {{
       #lbl {{ font-size: 4vw; padding: 3vw 5vw; letter-spacing: .06em; }}
-      #ui  {{ font-size: 3.5vw; padding: 3vw 5vw; width: 92vw; letter-spacing: .04em; }}
+      #ui  {{ width: 92vw; font-size: 3.5vw; }}
     }}
   </style>
 </head>
@@ -229,7 +371,32 @@ def build_html(b64, w, h):
 
 <canvas id="c"></canvas>
 <div id="lbl">{LABEL_ASSEMBLE}</div>
-<div id="ui">{LABEL_UI}<br>DOUBLE-CLICK RESET ROTATION · TRIPLE-CLICK FULL RESET</div>
+
+<div id="ui">
+  <div id="ui-toggle">C O N T R O L S &nbsp;▾</div>
+  <div id="crt-wrap">
+    <div id="crt-panel">
+      <div class="s">— ASSEMBLY —</div>
+      <div class="ln">SCROLL &nbsp;·&nbsp; ASSEMBLE / EXPLODE</div>
+      <div class="ln">DRAG &nbsp;·&nbsp; ROTATE SCENE</div>
+      <div class="s">— RESETS —</div>
+      <div class="ln">DOUBLE-CLICK &nbsp;·&nbsp; RESET ROTATION</div>
+      <div class="ln">TRIPLE-CLICK &nbsp;·&nbsp; FULL RESET</div>
+      <div class="s">— ASSEMBLED —</div>
+      <div class="ln">DRAG PIXEL &nbsp;·&nbsp; PULL IT OFF</div>
+      <div class="ln">CLICK PIXEL &nbsp;·&nbsp; SNAP HOME</div>
+      <div class="ln">SCROLL OUT &nbsp;·&nbsp; ALL PIXELS RETURN</div>
+    </div>
+    <div class="crt-line" id="line-a"><span class="crt-line-inner"></span></div>
+    <div class="crt-line" id="line-b"><span class="crt-line-inner"></span></div>
+    <div class="crt-line" id="line-c"><span class="crt-line-inner"></span></div>
+    <div class="crt-line" id="line-d"><span class="crt-line-inner"></span></div>
+    <div class="crt-line" id="line-e"><span class="crt-line-inner"></span></div>
+    <div id="crt-noise-a"></div>
+    <div id="crt-noise-b"></div>
+    <div id="crt-scan"></div>
+  </div>
+</div>
 
 <script>
 /*
@@ -289,7 +456,7 @@ for (let i = 0; i < N; i++) {{
 }}
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  W E B G L  S E T U P  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// GPU context. One draw call per frame handles all {w}x{h} cubes in parallel.
+// GPU context. One draw call per frame handles all cubes in parallel.
 
 const canvas = document.getElementById('c');
 canvas.width  = window.innerWidth;
@@ -303,19 +470,24 @@ if (!gl) {{
 
 gl.getExtension('OES_element_index_uint');
 gl.enable(gl.DEPTH_TEST);
-// blend disabled — depth test handles occlusion cleanly, no transparency stacking
 gl.clearColor({BG_COLOR});
 gl.disable(gl.CULL_FACE);
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  S H A D E R S  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Vertex shader runs on GPU — position, spin, assembly, scene rotation, projection.
+// Vertex shader: position, spin, assembly, drag offsets, scene rotation, projection.
+// Pick shader: renders pixel index as unique color for GPU hit detection.
 // ep drives everything: 0.0 = chaos, 1.0 = assembled.
+
+const MAX_DRAG = 64;  // max simultaneously dragged pixels
 
 const vs = `
   attribute vec3  aPos, aColor, aExp, aTgt, aSpin;
-  attribute float aShd;
+  attribute float aShd, aIdx;
   uniform float   uP, uRX, uRY, uPS, uSRX, uSRY;
   uniform vec2    uScr;
+  uniform int     uDragCount;
+  uniform float   uDragIdx[64];
+  uniform vec2    uDragOff[64];
   varying vec3    vC;
   varying float   vA;
 
@@ -329,7 +501,7 @@ const vs = `
       ? 2.0 * uP * uP
       : -1.0 + (4.0 - 2.0 * uP) * uP;
 
-    // spin factor — 1.0 at exploded, zeroes out as cube arrives home
+    // spin factor zeroes out as cubes arrive home
     float sf = 1.0 - ep;
     float h  = mix(uPS * {CUBE_EXPLODED}, uPS * {CUBE_ASSEMBLED}, ep);
     vec3  p  = rZ(aSpin.z*sf) * rY(aSpin.y*sf) * rX(aSpin.x*sf) * (aPos * h);
@@ -347,17 +519,27 @@ const vs = `
     float wpZ3 = -wp.x * sSY + wpZ2 * cSY;
     wp = vec3(wpX2, wpY, wpZ3);
 
-    // projection — perspective divide, clamp Z to avoid near-plane clipping
+    // drag offset — check if this pixel index is in the active drag list
+    vec2 dragOffset = vec2(0.0, 0.0);
+    for (int d = 0; d < 64; d++) {{
+      if (d >= uDragCount) break;
+      if (abs(uDragIdx[d] - aIdx) < 0.5) {{
+        dragOffset = uDragOff[d];
+        break;
+      }}
+    }}
+
+    // perspective projection
     vec3  rot = rX(uRX) * rY(uRY) * p;
-    float d   = max(wp.z + rot.z + 800.0, 50.0);   // 800 = camera offset, 50 = near clip
-    float ps2 = {FOV}.0 / d;                         // {FOV} = FOV in world units
+    float d   = max(wp.z + rot.z + 800.0, 50.0);  // 800 = camera offset, 50 = near clip
+    float ps2 = {FOV}.0 / d;                       // {FOV} = FOV in world units
     float s   = mix(ps2, 1.0, ep);
-    vec2  sc  = (wp.xy + rot.xy) * s / uScr;
-    float zn  = clamp((wp.z + rot.z) / 3000.0, -0.99, 0.99);  // 3000 = depth range
+    vec2  sc  = (wp.xy + rot.xy) * s / uScr + dragOffset / uScr;
+    float zn  = clamp((wp.z + rot.z) / 3000.0, -0.99, 0.99);
 
     gl_Position = vec4(sc.x, -sc.y, zn, 1.0);
     vC = aColor * aShd;
-    vA = 1.0;    // fully opaque — no transparency stacking artifacts
+    vA = 1.0;
   }}
 `;
 
@@ -366,6 +548,73 @@ const fs = `
   varying vec3  vC;
   varying float vA;
   void main() {{ gl_FragColor = vec4(vC, vA); }}
+`;
+
+// pick shader — renders each pixel as a unique ID color for click detection
+// index encodes as: r = (idx+1) % 256, g = floor((idx+1) / 256)
+// decodes to: idx = (r + g*256) - 1
+
+const vs_pick = `
+  attribute vec3  aPos, aExp, aTgt, aSpin;
+  attribute float aShd, aIdx;
+  uniform float   uP, uRX, uRY, uPS, uSRX, uSRY;
+  uniform vec2    uScr;
+  uniform int     uDragCount;
+  uniform float   uDragIdx[64];
+  uniform vec2    uDragOff[64];
+  varying float   vPickIdx;
+
+  mat3 rX(float a) {{ float c=cos(a),s=sin(a); return mat3(1,0,0, 0,c,-s, 0,s,c); }}
+  mat3 rY(float a) {{ float c=cos(a),s=sin(a); return mat3(c,0,s, 0,1,0, -s,0,c); }}
+  mat3 rZ(float a) {{ float c=cos(a),s=sin(a); return mat3(c,-s,0, s,c,0, 0,0,1); }}
+
+  void main() {{
+    float ep = uP < 0.5 ? 2.0*uP*uP : -1.0+(4.0-2.0*uP)*uP;
+    float sf = 1.0 - ep;
+    float h  = mix(uPS * {CUBE_EXPLODED}, uPS * {CUBE_ASSEMBLED}, ep);
+    vec3  p  = rZ(aSpin.z*sf) * rY(aSpin.y*sf) * rX(aSpin.x*sf) * (aPos * h);
+    vec3 wp  = mix(aExp, aTgt, ep);
+
+    float sceneF = clamp((1.0-ep)/0.1, 0.0, 1.0);
+    float cSX=cos(uSRX*sceneF), sSX=sin(uSRX*sceneF);
+    float cSY=cos(uSRY*sceneF), sSY=sin(uSRY*sceneF);
+    float wpY  = wp.y*cSX - wp.z*sSX;
+    float wpZ2 = wp.y*sSX + wp.z*cSX;
+    float wpX2 = wp.x*cSY + wpZ2*sSY;
+    float wpZ3 = -wp.x*sSY + wpZ2*cSY;
+    wp = vec3(wpX2, wpY, wpZ3);
+
+    // apply same drag offset so pick ID renders at actual screen position
+    vec2 dragOffset = vec2(0.0, 0.0);
+    for (int d = 0; d < 64; d++) {{
+      if (d >= uDragCount) break;
+      if (abs(uDragIdx[d] - aIdx) < 0.5) {{
+        dragOffset = uDragOff[d];
+        break;
+      }}
+    }}
+
+    vec3  rot = rX(uRX) * rY(uRY) * p;
+    float d2  = max(wp.z + rot.z + 800.0, 50.0);
+    float ps2 = {FOV}.0 / d2;
+    float s   = mix(ps2, 1.0, ep);
+    vec2  sc  = (wp.xy + rot.xy) * s / uScr + dragOffset / uScr;
+    float zn  = clamp((wp.z + rot.z) / 3000.0, -0.99, 0.99);
+
+    gl_Position = vec4(sc.x, -sc.y, zn, 1.0);
+    vPickIdx = aIdx;
+  }}
+`;
+
+const fs_pick = `
+  precision mediump float;
+  varying float vPickIdx;
+  void main() {{
+    float idx = vPickIdx + 1.0;
+    float r = mod(idx, 256.0) / 255.0;
+    float g = floor(idx / 256.0) / 255.0;
+    gl_FragColor = vec4(r, g, 0.0, 1.0);
+  }}
 `;
 
 function mkShader(type, src) {{
@@ -377,6 +626,7 @@ function mkShader(type, src) {{
   return sh;
 }}
 
+// main render program
 const prg = gl.createProgram();
 gl.attachShader(prg, mkShader(gl.VERTEX_SHADER,   vs));
 gl.attachShader(prg, mkShader(gl.FRAGMENT_SHADER, fs));
@@ -385,8 +635,14 @@ if (!gl.getProgramParameter(prg, gl.LINK_STATUS))
   console.error('Shader link error:', gl.getProgramInfoLog(prg));
 gl.useProgram(prg);
 
+// pick program — offscreen only, used for click-to-pixel detection
+const prgPick = gl.createProgram();
+gl.attachShader(prgPick, mkShader(gl.VERTEX_SHADER,   vs_pick));
+gl.attachShader(prgPick, mkShader(gl.FRAGMENT_SHADER, fs_pick));
+gl.linkProgram(prgPick);
+
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  G E O M E T R Y  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Six faces, 24 vertices, 36 indices. Every pixel gets this same unit cube.
+// Six faces, 24 vertices, 36 indices per cube.
 // Face shading: Front 1.0 · Back 0.9 · Top 0.6 · Bottom 0.4 · Right 0.75 · Left 0.65
 
 const fv = [
@@ -409,15 +665,15 @@ const fi = [
   20,21,22, 20,22,23    // left
 ];
 
-const NV  = 24;   // vertices per cube
-const NI  = 36;   // indices per cube (6 faces × 2 triangles × 3 verts)
+const NV = 24;  // vertices per cube
+const NI = 36;  // indices per cube
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  B U F F E R S  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Build per-vertex arrays — position, color, explosion origin, target, spin, shade.
+// Build per-vertex arrays for all cubes, upload to GPU as static buffers.
 
 const ps   = Math.min(canvas.width, canvas.height) / Math.max(W, H) * {VIEWPORT_FILL};
-const ox2  = -(W * ps) / 2;   // center the grid horizontally
-const oy2  = -(H * ps) / 2;   // center the grid vertically
+const ox2  = -(W * ps) / 2;
+const oy2  = -(H * ps) / 2;
 const tot  = N * NV;
 
 const posA = new Float32Array(tot * 3);
@@ -428,19 +684,26 @@ const spnA = new Float32Array(tot * 3);
 const shdA = new Float32Array(tot);
 
 for (let i = 0; i < N; i++) {{
-  const tx = ox2 + pxX[i] * ps + ps / 2;   // assembled X world position
-  const ty = oy2 + pxY[i] * ps + ps / 2;   // assembled Y world position
+  const tx = ox2 + pxX[i] * ps + ps / 2;
+  const ty = oy2 + pxY[i] * ps + ps / 2;
   for (let v = 0; v < NV; v++) {{
     const idx = i * NV + v;
     const v3  = v * 3;
-    posA[idx*3]   = fv[v3];     posA[idx*3+1] = fv[v3+1]; posA[idx*3+2] = fv[v3+2];
-    colA[idx*3]   = pxR[i];     colA[idx*3+1] = pxG[i];   colA[idx*3+2] = pxB[i];
-    expA[idx*3]   = oX[i];      expA[idx*3+1] = oY[i];     expA[idx*3+2] = oZ[i];
-    tgtA[idx*3]   = tx;         tgtA[idx*3+1] = ty;         tgtA[idx*3+2] = 0;
-    spnA[idx*3]   = sX[i];      spnA[idx*3+1] = sY[i];     spnA[idx*3+2] = sZ[i];
+    posA[idx*3]   = fv[v3];   posA[idx*3+1] = fv[v3+1]; posA[idx*3+2] = fv[v3+2];
+    colA[idx*3]   = pxR[i];   colA[idx*3+1] = pxG[i];   colA[idx*3+2] = pxB[i];
+    expA[idx*3]   = oX[i];    expA[idx*3+1] = oY[i];    expA[idx*3+2] = oZ[i];
+    tgtA[idx*3]   = tx;       tgtA[idx*3+1] = ty;        tgtA[idx*3+2] = 0;
+    spnA[idx*3]   = sX[i];    spnA[idx*3+1] = sY[i];    spnA[idx*3+2] = sZ[i];
     shdA[idx]     = fsh[v];
   }}
 }}
+
+// per-vertex pixel index — same index for all 24 verts of one cube
+// used by both main and pick shaders to identify which pixel owns each face
+const pixIdxA = new Float32Array(tot);
+for (let i = 0; i < N; i++)
+  for (let v = 0; v < NV; v++)
+    pixIdxA[i * NV + v] = i;
 
 const idxA = new Uint32Array(N * NI);
 for (let i = 0; i < N; i++)
@@ -461,57 +724,198 @@ const eB  = mkBuf(expA);
 const tB  = mkBuf(tgtA);
 const sB  = mkBuf(spnA);
 const shB = mkBuf(shdA);
+const piB = mkBuf(pixIdxA);  // pixel index buffer — new for drag feature
 
-function bindAttr(name, buf, size) {{
-  const loc = gl.getAttribLocation(prg, name);
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  P I C K  F R A M E B U F F E R  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// Offscreen render target used for GPU color readback hit detection.
+// Render pixel IDs here, gl.readPixels at cursor position → exact pixel index.
+
+const pickFB  = gl.createFramebuffer();
+const pickTex = gl.createTexture();
+const pickRB  = gl.createRenderbuffer();
+
+function resizePick() {{
+  gl.bindTexture(gl.TEXTURE_2D, pickTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, pickRB);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, pickFB);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, pickTex, 0);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, pickRB);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}}
+resizePick();
+
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  A T T R I B U T E S  +  U N I F O R M S  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// Bind vertex attributes for main program and cache all uniform locations.
+
+function bindAttr(program, name, buf, size) {{
+  const loc = gl.getAttribLocation(program, name);
   if (loc < 0) return;
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
 }}
 
-bindAttr('aPos',   pB,  3);
-bindAttr('aColor', cB,  3);
-bindAttr('aExp',   eB,  3);
-bindAttr('aTgt',   tB,  3);
-bindAttr('aSpin',  sB,  3);
-bindAttr('aShd',   shB, 1);
+// bind main program attributes
+gl.useProgram(prg);
+bindAttr(prg, 'aPos',   pB,  3);
+bindAttr(prg, 'aColor', cB,  3);
+bindAttr(prg, 'aExp',   eB,  3);
+bindAttr(prg, 'aTgt',   tB,  3);
+bindAttr(prg, 'aSpin',  sB,  3);
+bindAttr(prg, 'aShd',   shB, 1);
+bindAttr(prg, 'aIdx',   piB, 1);
 
-const uP   = gl.getUniformLocation(prg, 'uP');
-const uRX  = gl.getUniformLocation(prg, 'uRX');
-const uRY  = gl.getUniformLocation(prg, 'uRY');
-const uScr = gl.getUniformLocation(prg, 'uScr');
-const uPS  = gl.getUniformLocation(prg, 'uPS');
-const uSRX = gl.getUniformLocation(prg, 'uSRX');
-const uSRY = gl.getUniformLocation(prg, 'uSRY');
+const uP         = gl.getUniformLocation(prg, 'uP');
+const uRX        = gl.getUniformLocation(prg, 'uRX');
+const uRY        = gl.getUniformLocation(prg, 'uRY');
+const uScr       = gl.getUniformLocation(prg, 'uScr');
+const uPS        = gl.getUniformLocation(prg, 'uPS');
+const uSRX       = gl.getUniformLocation(prg, 'uSRX');
+const uSRY       = gl.getUniformLocation(prg, 'uSRY');
+const uDragCount = gl.getUniformLocation(prg, 'uDragCount');
+const uDragIdx   = gl.getUniformLocation(prg, 'uDragIdx[0]');
+const uDragOff   = gl.getUniformLocation(prg, 'uDragOff[0]');
+
+// pick program uniform locations
+const puP         = gl.getUniformLocation(prgPick, 'uP');
+const puRX        = gl.getUniformLocation(prgPick, 'uRX');
+const puRY        = gl.getUniformLocation(prgPick, 'uRY');
+const puScr       = gl.getUniformLocation(prgPick, 'uScr');
+const puPS        = gl.getUniformLocation(prgPick, 'uPS');
+const puSRX       = gl.getUniformLocation(prgPick, 'uSRX');
+const puSRY       = gl.getUniformLocation(prgPick, 'uSRY');
+const puDragCount = gl.getUniformLocation(prgPick, 'uDragCount');
+const puDragIdx   = gl.getUniformLocation(prgPick, 'uDragIdx[0]');
+const puDragOff   = gl.getUniformLocation(prgPick, 'uDragOff[0]');
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  S T A T E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Animation progress, rotation, interaction flags.
+// Animation progress, rotation, drag state.
 
-let prog    = 0;     // current assembly progress (0 = exploded, 1 = assembled)
-let tgt     = 0;     // target progress driven by scroll
-let rotX    = 0;     // global X rotation (reserved)
-let rotY    = 0;     // global Y rotation (reserved)
-let sceneRX = 0;     // scene rotation X — whole grid tips up/down
-let sceneRY = 0;     // scene rotation Y — whole grid turns left/right
+let prog    = 0;   // current assembly progress (0 = exploded, 1 = assembled)
+let tgt     = 0;   // target progress driven by scroll
+let rotX    = 0;   // reserved cube rotation X
+let rotY    = 0;   // reserved cube rotation Y
+let sceneRX = 0;   // scene rotation X — whole grid tips up/down
+let sceneRY = 0;   // scene rotation Y — whole grid turns left/right
 let drag    = false;
 let lx = 0, ly = 0;
+
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  P I X E L  D R A G  S T A T E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// draggedPixels — array of {{idx, offX, offY}} — screen-space offsets from home.
+// activeDrag    — the pixel currently locked to cursor during a drag.
+// mouseIsDown   — true while button held, before drag distance threshold commits.
+// mouseDownHitIdx — pixel index hit on mousedown; -1 if empty space was clicked.
+
+const draggedPixels = [];
+let activeDrag      = null;
+let mouseIsDown     = false;
+let mouseDownHitIdx = -1;
+
+// flat arrays for uploading drag state to GPU uniforms each frame
+const dragIdxFlat = new Float32Array(MAX_DRAG);
+const dragOffFlat = new Float32Array(MAX_DRAG * 2);
+
+function updateDragUniforms() {{
+  const n = draggedPixels.length;
+  for (let i = 0; i < n; i++) {{
+    dragIdxFlat[i]     = draggedPixels[i].idx;
+    dragOffFlat[i*2]   = draggedPixels[i].offX;
+    dragOffFlat[i*2+1] = draggedPixels[i].offY;
+  }}
+  gl.uniform1i(uDragCount, n);
+  if (n > 0) {{
+    gl.uniform1fv(uDragIdx, dragIdxFlat.subarray(0, n));
+    gl.uniform2fv(uDragOff, dragOffFlat.subarray(0, n * 2));
+  }}
+}}
+
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  P I C K  P A S S  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// Renders pixel IDs offscreen, reads the color at the cursor position,
+// decodes it back to a pixel index. No coordinate math — GPU tells us exactly.
+// Returns pixel index 0..N-1, or -1 if cursor is over background.
+
+function pickAt(mx, my) {{
+  gl.useProgram(prgPick);
+
+  // bind pick program attributes
+  bindAttr(prgPick, 'aPos',  pB,  3);
+  bindAttr(prgPick, 'aExp',  eB,  3);
+  bindAttr(prgPick, 'aTgt',  tB,  3);
+  bindAttr(prgPick, 'aSpin', sB,  3);
+  bindAttr(prgPick, 'aShd',  shB, 1);
+  bindAttr(prgPick, 'aIdx',  piB, 1);
+
+  // upload same state as main render so pick results match what's on screen
+  gl.uniform1f(puP,   Math.max(0, Math.min(1, prog)));
+  gl.uniform1f(puRX,  rotX);
+  gl.uniform1f(puRY,  rotY);
+  gl.uniform2f(puScr, canvas.width / 2, canvas.height / 2);
+  gl.uniform1f(puPS,  ps);
+  gl.uniform1f(puSRX, sceneRX);
+  gl.uniform1f(puSRY, sceneRY);
+
+  // upload drag offsets so dragged pixels render at their actual screen positions
+  const n = draggedPixels.length;
+  for (let i = 0; i < n; i++) {{
+    dragIdxFlat[i]     = draggedPixels[i].idx;
+    dragOffFlat[i*2]   = draggedPixels[i].offX;
+    dragOffFlat[i*2+1] = draggedPixels[i].offY;
+  }}
+  gl.uniform1i(puDragCount, n);
+  if (n > 0) {{
+    gl.uniform1fv(puDragIdx, dragIdxFlat.subarray(0, n));
+    gl.uniform2fv(puDragOff, dragOffFlat.subarray(0, n * 2));
+  }}
+
+  // draw to offscreen framebuffer
+  gl.bindFramebuffer(gl.FRAMEBUFFER, pickFB);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iB);
+  gl.drawElements(gl.TRIANGLES, N * NI, gl.UNSIGNED_INT, 0);
+
+  // read the pixel at cursor — Y is flipped in WebGL framebuffer coordinates
+  const pixel = new Uint8Array(4);
+  const fy    = canvas.height - my - 1;
+  gl.readPixels(mx, fy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  // restore main program and re-bind its attributes
+  gl.useProgram(prg);
+  bindAttr(prg, 'aPos',   pB,  3);
+  bindAttr(prg, 'aColor', cB,  3);
+  bindAttr(prg, 'aExp',   eB,  3);
+  bindAttr(prg, 'aTgt',   tB,  3);
+  bindAttr(prg, 'aSpin',  sB,  3);
+  bindAttr(prg, 'aShd',   shB, 1);
+  bindAttr(prg, 'aIdx',   piB, 1);
+
+  // decode: r=0, g=0 means background (no pixel there)
+  const r = pixel[0], g = pixel[1];
+  if (r === 0 && g === 0) return -1;
+  return (r + g * 256) - 1;
+}}
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  R E N D E R  L O O P  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 // Runs 60 times per second. Lerps progress, uploads uniforms, draws everything.
 
 function draw() {{
-  // chase the target — smooth, never instant (0.055 = lerp speed)
+  // chase the target — smooth, never instant
   prog += (tgt - prog) * {LERP_SPEED};
   if (Math.abs(tgt - prog) < {SNAP_THRESHOLD}) prog = tgt;
 
-  // assembled — lock drag off
+  // assembled — scene drag locks off
   if (prog >= 1) drag = false;
 
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const p = Math.max(0, Math.min(1, prog));
+  gl.useProgram(prg);
   gl.uniform1f(uP,   p);
   gl.uniform1f(uRX,  rotX);
   gl.uniform1f(uRY,  rotY);
@@ -519,14 +923,18 @@ function draw() {{
   gl.uniform1f(uPS,  ps);
   gl.uniform1f(uSRX, sceneRX);
   gl.uniform1f(uSRY, sceneRY);
+  updateDragUniforms();
 
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iB);
   gl.drawElements(gl.TRIANGLES, N * NI, gl.UNSIGNED_INT, 0);
 
-  // update top label
+  // update label — three states: assembling, dragging pixels, fully assembled
   const lbl = document.getElementById('lbl');
   if      (p < 0.03) lbl.textContent = '{LABEL_ASSEMBLE}';
-  else if (p > 0.97) lbl.textContent = '{LABEL_ASSEMBLED}';
+  else if (p > 0.97) {{
+    if (draggedPixels.length > 0) lbl.textContent = 'CLICK PIXEL TO RETURN';
+    else                           lbl.textContent = '{LABEL_ASSEMBLED}';
+  }}
   else               lbl.textContent = `ASSEMBLING... ${{Math.round(p * 100)}}%`;
 
   requestAnimationFrame(draw);
@@ -535,15 +943,56 @@ function draw() {{
 draw();
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E V E N T S  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Scroll assembles. Drag rotates. Double-click resets. Triple-click full reset.
+// Scroll assembles. Drag rotates or moves pixels. Double-click resets rotation.
+// Triple-click full reset. Pixel drag only available when fully assembled.
 
 window.addEventListener('wheel', e => {{
   e.preventDefault();
+  const prevTgt = tgt;
   tgt = Math.max(0, Math.min(1, tgt + e.deltaY * {SCROLL_SPEED}));
+  // scrolling out — all dragged pixels return to chaos with the rest
+  if (tgt < prevTgt && draggedPixels.length > 0) {{
+    draggedPixels.length = 0;
+    activeDrag = null;
+  }}
 }}, {{ passive: false }});
 
 window.addEventListener('mousemove', e => {{
-  if (drag && prog < 1) {{
+  // nothing moves unless a button is held
+  if (e.buttons === 0) {{
+    activeDrag  = null;
+    mouseIsDown = false;
+    return;
+  }}
+
+  if (activeDrag !== null) {{
+    // pixel locked to cursor — move it
+    activeDrag.offX += e.clientX - lx;
+    activeDrag.offY += e.clientY - ly;
+    lx = e.clientX;
+    ly = e.clientY;
+
+  }} else if (mouseIsDown && mouseDownHitIdx >= 0 && prog >= 0.99) {{
+    // button held on a confirmed pixel hit — commit drag once moved enough
+    const moved = Math.abs(e.clientX - lx) + Math.abs(e.clientY - ly);
+    if (moved > 4) {{                         // 4px threshold before drag commits
+      mouseIsDown = false;
+      const existing = draggedPixels.find(d => d.idx === mouseDownHitIdx);
+      if (existing) {{
+        activeDrag = existing;
+      }} else if (draggedPixels.length < MAX_DRAG) {{
+        const entry = {{ idx: mouseDownHitIdx, offX: 0, offY: 0 }};
+        draggedPixels.push(entry);
+        activeDrag = entry;
+      }}
+      if (activeDrag !== null) {{
+        lx = e.clientX;
+        ly = e.clientY;
+      }}
+    }}
+
+  }} else if (drag && prog < 1) {{
+    // not assembled — drag rotates the whole scene
     sceneRY += (e.clientX - lx) * 0.005;
     sceneRX += (e.clientY - ly) * 0.005;
     lx = e.clientX;
@@ -552,20 +1001,58 @@ window.addEventListener('mousemove', e => {{
 }});
 
 canvas.addEventListener('mousedown', e => {{
-  if (prog < 1) {{ drag = true; lx = e.clientX; ly = e.clientY; }}
+  lx = e.clientX;
+  ly = e.clientY;
+  activeDrag      = null;
+  mouseIsDown     = false;
+  mouseDownHitIdx = -1;  // always reset — no stale pixel from last interaction
+
+  if (prog >= 0.99) {{
+    const hitIdx = pickAt(e.clientX, e.clientY);
+    if (hitIdx >= 0) {{
+      // confirmed pixel under cursor — arm for drag
+      mouseDownHitIdx = hitIdx;
+      mouseIsDown     = true;
+    }}
+    // hitIdx === -1 means truly empty space — nothing to drag
+  }} else {{
+    drag = true;
+  }}
 }});
 
-window.addEventListener('mouseup', () => drag = false);
+window.addEventListener('mouseup', e => {{
+  if (mouseIsDown && mouseDownHitIdx >= 0 && prog >= 0.99) {{
+    // mouse never moved enough — this was a clean click, not a drag
+    const hitIdx = pickAt(e.clientX, e.clientY);
+    if (hitIdx >= 0) {{
+      const existingI = draggedPixels.findIndex(d => d.idx === hitIdx);
+      if (existingI >= 0) {{
+        // clicked a floating pixel — snap it home
+        draggedPixels.splice(existingI, 1);
+      }}
+      // clicked a non-floating portrait pixel — do nothing
+    }}
+  }}
+  activeDrag      = null;
+  mouseIsDown     = false;
+  mouseDownHitIdx = -1;
+  drag            = false;
+}});
 
+// double-click — reset rotation only
 canvas.addEventListener('dblclick', () => {{ sceneRX = 0; sceneRY = 0; }});
 
+// triple-click — full reset including all dragged pixels
 let clickCount = 0, clickTimer = null;
 canvas.addEventListener('click', () => {{
   clickCount++;
   clearTimeout(clickTimer);
   clickTimer = setTimeout(() => clickCount = 0, 400);
   if (clickCount >= 3) {{
-    clickCount = 0;
+    clickCount          = 0;
+    draggedPixels.length = 0;
+    activeDrag          = null;
+    mouseIsDown         = false;
     tgt = 0; prog = 0; sceneRX = 0; sceneRY = 0; drag = false;
   }}
 }});
@@ -573,10 +1060,11 @@ canvas.addEventListener('click', () => {{
 window.addEventListener('resize', () => {{
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
+  resizePick();  // keep pick framebuffer in sync with canvas size
 }});
 
 // ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  T O U C H  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-// Mobile — single finger scroll, two finger rotate, double/triple tap reset.
+// Mobile support — single finger scroll, two finger rotate, double/triple tap reset.
 
 let lastTouchY = 0, lastTouchX = 0;
 let lastTap = 0, tapCount = 0, tapTimer = null;
@@ -593,7 +1081,11 @@ canvas.addEventListener('touchstart', e => {{
     clearTimeout(tapTimer);
     tapTimer = setTimeout(() => {{
       if (tapCount === 2) {{ sceneRX = 0; sceneRY = 0; }}
-      if (tapCount >= 3)  {{ tgt = 0; prog = 0; sceneRX = 0; sceneRY = 0; drag = false; }}
+      if (tapCount >= 3)  {{
+        draggedPixels.length = 0;
+        activeDrag = null;
+        tgt = 0; prog = 0; sceneRX = 0; sceneRY = 0; drag = false;
+      }}
       tapCount = 0;
     }}, 400);
   }}
@@ -629,6 +1121,48 @@ canvas.addEventListener('touchmove', e => {{
 
 canvas.addEventListener('touchend', () => {{ if (prog >= 1) drag = false; }}, {{ passive: false }});
 
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  C O N T R O L S  P A N E L  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// CRT open/close — dot appears, stretches horizontal, then expands full height.
+// Close reverses: collapses to line, shrinks to dot, gone.
+
+const uiToggle = document.getElementById('ui-toggle');
+const crtWrap  = document.getElementById('crt-wrap');
+let uiOpen = false;
+
+uiToggle.addEventListener('click', () => {{
+  uiOpen = !uiOpen;
+
+  if (uiOpen) {{
+    // open sequence — dot phase then expand phase
+    uiToggle.textContent = 'C O N T R O L S \\u00a0▴';
+    crtWrap.className = '';
+    crtWrap.style.display = 'block';
+    void crtWrap.offsetWidth;                  // force reflow before animation
+    crtWrap.classList.add('phase-dot');
+
+    crtWrap.addEventListener('animationend', () => {{
+      if (!uiOpen) return;
+      crtWrap.classList.remove('phase-dot');
+      void crtWrap.offsetWidth;
+      crtWrap.classList.add('phase-expand');
+      crtWrap.addEventListener('animationend', () => {{
+        crtWrap.classList.remove('phase-expand');
+      }}, {{ once: true }});
+    }}, {{ once: true }});
+
+  }} else {{
+    // close sequence — collapse to line then vanish
+    uiToggle.textContent = 'C O N T R O L S \\u00a0▾';
+    crtWrap.classList.remove('phase-dot', 'phase-expand');
+    void crtWrap.offsetWidth;
+    crtWrap.classList.add('closing');
+    crtWrap.addEventListener('animationend', () => {{
+      crtWrap.classList.remove('closing');
+      crtWrap.style.display = 'none';
+    }}, {{ once: true }});
+  }}
+}});
+
 // ◈ end of codex — Digivatar
 </script>
 
@@ -639,7 +1173,6 @@ canvas.addEventListener('touchend', () => {{ if (prog >= 1) drag = false; }}, {{
 
 
 # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E N T R Y  P O I N T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-# Parse args, run encode, write output.
 
 def main():
     parser = argparse.ArgumentParser(

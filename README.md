@@ -12,6 +12,8 @@ Built by [Digivatar](https://github.com/Master-Zomon) — avant-garde digital vi
 
 Drop in any native-resolution pixel art PNG with a transparent background. The tool converts every visible pixel into a 3D cube with its exact color. On load, the cubes are scattered in world space — flying toward the camera, spinning freely. As the viewer scrolls, they converge and lock into the pixel art portrait.
 
+When fully assembled, individual pixels can be grabbed and pulled off the portrait, then snapped back or reclaimed by scrolling out.
+
 No libraries. No dependencies. One HTML file, one Python script to encode your art.
 
 ---
@@ -30,9 +32,9 @@ Python is a free tool this script needs to run. You only install it once.
 
 1. Go to **python.org/downloads**
 2. Click the big yellow Download button and run the installer
-3. **Windows users — critical:** on the very first installer screen, check the box that says **"Add Python to PATH"** before you click anything else. It is easy to miss and if you skip it Python will not work. See the image below if you are unsure which box.
+3. **Windows users — critical:** on the very first installer screen, check the box that says **"Add Python to PATH"** before you click anything else. It is easy to miss and if you skip it Python will not work.
 4. Click **Install Now** and let it finish — no need to change any other settings
-5. When done, press the **Windows key**, type **cmd**, and open **Command Prompt** — this is just a text window where you type instructions
+5. When done, press the **Windows key**, type **cmd**, and open **Command Prompt**
 6. Type this exactly and hit Enter:
 
 ```
@@ -40,8 +42,6 @@ pip install Pillow
 ```
 
 When you see "Successfully installed Pillow" you are done. You will never have to do this again.
-
-> **What is Command Prompt?** It is a plain text window that lets you run tools by typing commands. It looks old school but it is just a way to run scripts. You are not breaking anything by using it.
 
 ---
 
@@ -116,6 +116,22 @@ That is it. You can share the `output.html` file with anyone — it works in any
 
 ---
 
+## Interactions
+
+| Input | What it does |
+|---|---|
+| **Scroll** | Assembles / explodes the pixel art |
+| **Drag** | Rotates the scene while assembling |
+| **Double-click** | Resets scene rotation |
+| **Triple-click** | Full reset — explodes back to start |
+| **Drag pixel** *(assembled)* | Pulls an individual pixel off the portrait |
+| **Click pixel** *(assembled)* | Snaps a pulled pixel back home |
+| **Scroll out** *(assembled)* | Returns all pulled pixels and explodes |
+
+The controls panel in the bottom center shows all interactions. Click **CONTROLS** to open it — it animates open like a CRT monitor powering on and closes the same way.
+
+---
+
 ## Troubleshooting
 
 **"python is not recognized"** — Python was not added to PATH during install. Uninstall Python, run the installer again, and check the "Add Python to PATH" box on the very first screen.
@@ -157,8 +173,8 @@ All tunable values are at the top of `encode.py` and commented. You do not need 
 | Parameter | Default | What it does |
 |---|---|---|
 | `VIEWPORT_FILL` | `0.82` | How much of the viewport the assembled image fills. 1.0 = edge to edge. |
-| `CUBE_SIZE_ASSEMBLED` | `0.505` | Pixel cube size at assembled state. Below 0.5 adds gap between pixels. Above 0.5 = overlap. |
-| `CUBE_SIZE_EXPLODED` | `8.0` | Cube size multiplier when fully exploded. Higher = bigger cubes near camera. |
+| `CUBE_ASSEMBLED` | `0.505` | Pixel cube size at assembled state. Below 0.5 adds gap between pixels. Above 0.5 = overlap. |
+| `CUBE_EXPLODED` | `8.0` | Cube size multiplier when fully exploded. Higher = bigger cubes near camera. |
 | `LABEL_ASSEMBLED` | `PIXEL PERFECT` | Text shown when fully assembled. Change this to your artwork name or artist name. |
 
 ### Visual
@@ -166,7 +182,7 @@ All tunable values are at the top of `encode.py` and commented. You do not need 
 | Parameter | Default | What it does |
 |---|---|---|
 | `FOV` | `700` | Perspective field of view in world units. Lower = more dramatic. Higher = flatter. |
-| `BACKGROUND_COLOR` | `#080818` | Canvas background color. Change to match your site. |
+| `BG_HEX` | `#080818` | Canvas background color. Change to match your site. Keep `BG_COLOR` in sync. |
 
 ### Cube face shading
 
@@ -189,7 +205,7 @@ Run the embed script:
 python embed.py output.html
 ```
 
-This outputs `embed.html` — paste it into your page HTML. Works with plain HTML, WordPress, Webflow, or React.
+This outputs `embed_section.html` — paste it into your page HTML. Works with plain HTML, WordPress, Webflow, or React.
 
 ---
 
