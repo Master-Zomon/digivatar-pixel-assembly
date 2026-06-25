@@ -82,6 +82,27 @@ One bold line. Peaks loud. Everything after drops to quiet.
 
 ---
 
+## Identity line — right after the signature block
+
+Names the project and file. One line. No exceptions.
+
+**JS / HTML:**
+```
+// ◈ DIGIVATAR — [project-name] — [filename]
+```
+
+**Python:**
+```
+# ◈ DIGIVATAR — [project-name] — [filename]
+```
+
+Example:
+```
+# ◈ DIGIVATAR — digivatar-pixel-assembly — encode.py
+```
+
+---
+
 ## Closing mark — last line of every file
 
 ```
