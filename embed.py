@@ -53,8 +53,14 @@ def main():
         print(f"ERROR: File not found: {in_path}")
         sys.exit(1)
 
+    # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  R E A D  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    # Load the standalone HTML and extract the pieces we need to rewrite.
+    #
     content = in_path.read_text()
 
+    # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  E X T R A C T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    # Pull the B64 blob, script, and styles out of the standalone file.
+    #
     # Extract B64 blob
     b64_match = re.search(r'const B64="([^"]+)";', content)
     if not b64_match:
@@ -79,6 +85,10 @@ def main():
 
     script = script_match.group(1)
 
+    # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  R E W R I T E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    # Swap fullscreen canvas for section-relative sizing.
+    # Swap wheel listener for scroll-position listener.
+    #
     # Rewrite canvas sizing — fullscreen → section-relative
     script = script.replace(
         'canvas.width=window.innerWidth;canvas.height=window.innerHeight;',
@@ -155,6 +165,9 @@ def main():
 </script>
 """
 
+    # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  O U T P U T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+    # Write the embed block and external data file.
+    #
     out_path = Path(args.output)
     out_path.write_text(embed)
     print(f"Embed block: {out_path}")

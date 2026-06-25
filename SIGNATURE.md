@@ -2,8 +2,12 @@
 
 Copy-paste these into any new file.
 
+---
+
+## File header signature
+
+**JS / HTML** — goes inside the `<script>` tag:
 ```
-JS/HTML FULL:
 /*
  * ████████████████████████████████████████████████████████████████████
  * ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -22,8 +26,10 @@ JS/HTML FULL:
  *  ◈ Avant-garde digital visual world-building and music artist
  *  ◈ github.com/Master-Zomon  |  digivatar.com
  * ─────────────────────────────────────────────────────────────────── */
+```
 
-PYTHON FULL:
+**Python** — goes at top of file:
+```
 # ████████████████████████████████████████████████████████████████████
 # ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 # ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -41,13 +47,35 @@ PYTHON FULL:
 #  ◈ Avant-garde digital visual world-building and music artist
 #  ◈ github.com/Master-Zomon  |  digivatar.com
 # ───────────────────────────────────────────────────────────────────
+```
 
-JS COMPACT:
-// ◈ DIGIVATAR — Another master codex from Digivatar
-// ◈ github.com/Master-Zomon | digivatar.com
+---
 
-PYTHON COMPACT:
-# ◈ DIGIVATAR — Another master codex from Digivatar
-# ◈ github.com/Master-Zomon | digivatar.com
+## Section headers — used throughout every file
 
+One bold line. Peaks loud. Everything after drops to quiet.
+
+**JS / HTML:**
+```
+// ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  S E C T I O N  N A M E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+// One line of intent — what this section does and why it matters.
+//
+```
+
+**Python:**
+```
+# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  S E C T I O N  N A M E  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+# One line of intent — what this section does and why it matters.
+#
+```
+
+---
+
+## Compact one-liner (utility files, quick scripts)
+
+```
+// ◈ DIGIVATAR — Another master codex from Digivatar | digivatar.com
+```
+```
+# ◈ DIGIVATAR — Another master codex from Digivatar | digivatar.com
 ```
