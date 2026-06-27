@@ -4,7 +4,11 @@ A WebGL tool that explodes your native pixel art into 3D spinning cubes — then
 
 Built by [Digivatar](https://github.com/Master-Zomon) — avant-garde digital visual world-building and music artist.
 
-**<a href="https://master-zomon.github.io/digivatar-pixel-assembly/digivatar_webgl.html" target="_blank">→ Live Demo</a>**
+**<a href="https://master-zomon.github.io/digivatar-pixel-assembly/digivatar_webgl.html" target="_blank">→ Live Demo 1 — CyberPunk Digi</a>**
+
+**<a href="https://master-zomon.github.io/digivatar-pixel-assembly/comrades_webgl.html" target="_blank">→ Live Demo 2 — Comrades</a>**
+
+**<a href="https://master-zomon.github.io/digivatar-pixel-assembly/nakamingo_webgl.html" target="_blank">→ Live Demo 3 — Nakamingo</a>**
 
 ---
 
@@ -223,8 +227,11 @@ This outputs `embed_section.html` — paste it into your page HTML. Works with p
 
 ## Example art
 
-The included demo uses original pixel art by [Digivatar](https://github.com/Master-Zomon).
-`example/CyberPunkDigi_NOBG_Native.png` — 154x154 native resolution, transparent background.
+Live demos use pixel art from three different communities — each a self-contained HTML file in this repo.
+
+`digivatar_webgl.html` — original art by [Digivatar](https://github.com/Master-Zomon), 154x154 native resolution.
+`comrades_webgl.html` — Comrades pixel art community demo.
+`nakamingo_webgl.html` — Nakamingo pixel art community demo.
 
 ---
 
@@ -232,6 +239,10 @@ The included demo uses original pixel art by [Digivatar](https://github.com/Mast
 
 MIT — free to use, modify, and distribute.
 If this helped your project, a shoutout to [Digivatar](https://github.com/Master-Zomon) is always appreciated.
+
+---
+
+If this codex helped you — donate to starving artist **digivatar.eth**
 
 ---
 
