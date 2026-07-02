@@ -1,0 +1,22 @@
+# ◈ DIGIVATAR — digivatar-pixel-assembly — .gitignore
+
+# ── third-party font — local use only, do NOT redistribute the raw file ──
+# MEKZANTINE by MEK.txt | @michaelmicasso. Keep next to encode.py so your
+# encodes pick it up, but never push the standalone .woff2 to the public repo.
+MEKZANTINE-Regular__ALPHA_v1_.woff2
+*.woff2
+*.woff
+*.ttf
+*.otf
+
+# ── generated output — the encoder writes these, no need to track them ──
+output.html
+embed_section.html
+
+# ── python cruft ──
+__pycache__/
+*.pyc
+
+# ── os / editor noise ──
+.DS_Store
+Thumbs.db
