@@ -393,6 +393,7 @@ def build_html(b64, w, h):
     @media (max-width: 768px) {{
       #lbl {{ font-size: 8vw; padding: 3vw 5vw; letter-spacing: .06em; }}
       #ui  {{ width: 92vw; font-size: 7vw; }}
+      #crt-panel {{ max-height: 60vh; overflow-y: auto; line-height: 1.8; }}
     }}
   </style>
 </head>
