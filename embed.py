@@ -313,4 +313,5 @@ def main():
 if __name__ == '__main__':
     main()
 
+# If this codex helped you — donate to starving artist digivatar.eth
 # ◈ end of codex — Digivatar

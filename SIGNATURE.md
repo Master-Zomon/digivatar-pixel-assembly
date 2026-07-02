@@ -36,7 +36,7 @@ Copy-paste these into any new file.
 # ██████╗ ██╗ ██████╗ ██╗██╗   ██╗ █████╗ ████████╗ █████╗ ██████╗
 # ██╔══██╗██║██╔════╝ ██║██║   ██║██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗
 # ██║  ██║██║██║  ███╗██║██║   ██║███████║   ██║   ███████║██████╔╝
-# ██║  ██║██║██║   ██║██║╚██╗ ██╔╝██╔══██║   ██║   ██╔══██║██╔══██╗
+# ██║  ██║██║██║   ██║██║╚██╗ ██╔╝██▔══██║   ██║   ██╔══██║██╔══██╗
 # ██████╔╝██║╚██████╔╝██║ ╚████╔╝ ██║  ██║   ██║   ██║  ██║██║  ██║
 # ╚═════╝ ╚═╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
 # ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -103,11 +103,16 @@ Example:
 
 ---
 
-## Closing mark — last line of every file
+## Closing mark — last two lines of every file
 
+**JS / HTML:**
 ```
+// If this codex helped you — donate to starving artist digivatar.eth
 // ◈ end of codex — Digivatar
 ```
+
+**Python:**
 ```
+# If this codex helped you — donate to starving artist digivatar.eth
 # ◈ end of codex — Digivatar
 ```

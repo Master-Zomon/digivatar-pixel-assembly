@@ -179,8 +179,36 @@ def encode_pixels(img_path):
 # The JS inside is kept readable — a veteran should be able to open this
 # and understand exactly what it does without a decoder ring.
 
+# ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  F O N T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+# MEKZANTINE embedded as base64 — self-contained, no external file needed.
+# Font by MEK.txt | @MEK.txt — thank you for the incredible type.
+#
+
+def load_font_b64():
+    """
+    Load the MEKZANTINE font as a base64 string for embedding in HTML output.
+    Font file sits next to encode.py. Falls back to monospace if not found.
+    """
+    font_path = Path(__file__).parent / 'MEKZANTINE-Regular__ALPHA_v1_.woff2'
+    if not font_path.exists():
+        print("WARNING: MEKZANTINE font not found — output will use monospace fallback.")
+        return None
+    data = font_path.read_bytes()
+    return base64.b64encode(data).decode()
+
+
 def build_html(b64, w, h):
     """Build a self-contained WebGL HTML file from the encoded pixel blob."""
+
+    font_b64  = load_font_b64()
+    font_face = f'''@font-face {{
+      font-family: 'MEKZANTINE';
+      src: url('data:font/woff2;base64,{font_b64}') format('woff2');
+      font-weight: normal;
+      font-style: normal;
+    }}''' if font_b64 else ''
+    font_stack     = "'MEKZANTINE', monospace" if font_b64 else "monospace"
+    font_stack_esc = "\\'MEKZANTINE\\', monospace" if font_b64 else "monospace"  # for use inside single-quoted JS strings
 
     # build face shade array — 4 verts per face × 6 faces
     shades = ', '.join(
@@ -201,13 +229,14 @@ def build_html(b64, w, h):
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Pixel Assembly</title>
   <style>
+    {font_face}
     * {{ margin: 0; padding: 0; box-sizing: border-box; }}
     body {{ background: {BG_HEX}; overflow: hidden; }}
     canvas {{ display: block; width: 100vw; height: 100vh; }}
 
     #lbl {{
       position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
-      color: rgba(180,140,255,0.9); font: 11px monospace; letter-spacing: .2em;
+      color: rgba(180,140,255,0.9); font: 22px {font_stack}; letter-spacing: .2em;
       pointer-events: none; background: rgba(8,8,24,0.65);
       padding: 6px 18px; border-radius: 20px; z-index: 10;
       backdrop-filter: blur(4px);
@@ -216,9 +245,9 @@ def build_html(b64, w, h):
     /* ── CRT controls panel ── */
     #ui {{
       position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      font: 11px monospace; letter-spacing: .18em;
+      font: 22px {font_stack}; letter-spacing: .18em;
       z-index: 10; text-align: center; user-select: none;
-      width: 340px;
+      width: 480px;
     }}
     #ui-toggle {{
       display: inline-block;
@@ -248,12 +277,12 @@ def build_html(b64, w, h):
       padding: 16px 22px;
       color: rgba(255,255,255,0.8);
       line-height: 2.2;
-      font-size: 10px;
+      font-size: 20px;
       letter-spacing: .15em;
       position: relative;
       z-index: 1;
     }}
-    #crt-panel .s {{ color: rgba(200,160,255,1.0); font-size: 9px; letter-spacing: .3em; margin-top: 6px; }}
+    #crt-panel .s {{ color: rgba(200,160,255,1.0); font-size: 18px; letter-spacing: .3em; margin-top: 6px; }}
     #crt-panel .s:first-child {{ margin-top: 0; }}
     #crt-scan {{
       position: absolute; inset: 0; border-radius: 14px;
@@ -362,8 +391,8 @@ def build_html(b64, w, h):
     #crt-wrap.closing      {{                 transform-origin: center; animation: crt-shutoff 0.22s cubic-bezier(0.6,0,1,0.4)   forwards; }}
 
     @media (max-width: 768px) {{
-      #lbl {{ font-size: 4vw; padding: 3vw 5vw; letter-spacing: .06em; }}
-      #ui  {{ width: 92vw; font-size: 3.5vw; }}
+      #lbl {{ font-size: 8vw; padding: 3vw 5vw; letter-spacing: .06em; }}
+      #ui  {{ width: 92vw; font-size: 7vw; }}
     }}
   </style>
 </head>
@@ -464,7 +493,7 @@ canvas.height = window.innerHeight;
 
 const gl = canvas.getContext('webgl', {{ antialias: false, alpha: false }});
 if (!gl) {{
-  document.body.innerHTML = '<p style="color:#ff44ff;font:16px monospace;padding:2rem">WebGL not supported in this browser.</p>';
+  document.body.innerHTML = '<p style="color:#ff44ff;font:16px {font_stack_esc};padding:2rem">WebGL not supported in this browser.</p>';
   throw new Error('WebGL not supported');
 }}
 
