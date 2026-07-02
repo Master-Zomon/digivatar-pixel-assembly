@@ -18,7 +18,7 @@
 
   #lbl {
     position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
-    color: rgba(180,140,255,0.9); font: 11px 'MEKZANTINE', monospace; letter-spacing: .2em;
+    color: rgba(180,140,255,0.9); font: 22px 'MEKZANTINE', monospace; letter-spacing: .2em;
     pointer-events: none; background: rgba(8,8,24,0.65);
     padding: 6px 18px; border-radius: 20px; z-index: 10;
     backdrop-filter: blur(4px);
@@ -27,9 +27,9 @@
   /* ── CRT controls panel ── */
   #ui {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    font: 11px 'MEKZANTINE', monospace; letter-spacing: .18em;
+    font: 22px 'MEKZANTINE', monospace; letter-spacing: .18em;
     z-index: 10; text-align: center; user-select: none;
-    width: 340px;
+    width: 480px;
   }
 
   #ui-toggle {
@@ -61,12 +61,12 @@
     padding: 16px 22px;
     color: rgba(255,255,255,0.8);
     line-height: 2.2;
-    font-size: 10px;
+    font-size: 20px;
     letter-spacing: .15em;
     position: relative;
     z-index: 1;
   }
-  #crt-panel .s { color: rgba(200,160,255,1.0); font-size: 9px; letter-spacing: .3em; margin-top: 6px; }
+  #crt-panel .s { color: rgba(200,160,255,1.0); font-size: 18px; letter-spacing: .3em; margin-top: 6px; }
   #crt-panel .s:first-child { margin-top: 0; }
 
   /* static scanline grid */
@@ -231,8 +231,8 @@
   #crt-wrap.closing      {                 transform-origin: center; animation: crt-shutoff 0.22s cubic-bezier(0.6,0,1,0.4)   forwards; }
 
   @media (max-width: 768px) {
-    #lbl { font-size: 4vw; padding: 3vw 5vw; letter-spacing: .06em; }
-    #ui  { width: 92vw; font-size: 3.5vw; }
+    #lbl { font-size: 8vw; padding: 3vw 5vw; letter-spacing: .06em; }
+    #ui  { width: 92vw; font-size: 7vw; }
   }
 </style>
 </head>
@@ -330,7 +330,7 @@ canvas.height = window.innerHeight;
 
 const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
 if (!gl) {
-  document.body.innerHTML = '<p style="color:#ff44ff;font:16px 'MEKZANTINE', monospace;padding:2rem">WebGL not supported in this browser.</p>';
+  document.body.innerHTML = '<p style="color:#ff44ff;font:16px \'MEKZANTINE\', monospace;padding:2rem">WebGL not supported in this browser.</p>';
   throw new Error('WebGL not supported');
 }
 
