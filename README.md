@@ -4,7 +4,7 @@ A WebGL tool that explodes your native pixel art into 3D spinning cubes — then
 
 Built by [Digivatar](https://github.com/Master-Zomon) — avant-garde digital visual world-building and music artist.
 
-Font by MEK.txt | @MEK.txt — thank you for the incredible type. MEKZANTINE (Alpha v1)
+Font by MEK.txt | @michaelmicasso — thank you for the incredible type. MEKZANTINE (Alpha v1)
 
 **<a href="https://master-zomon.github.io/digivatar-pixel-assembly/digivatar_webgl.html" target="_blank">→ Live Demo 1 — CyberPunk Digi</a>**
 

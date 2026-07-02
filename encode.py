@@ -181,7 +181,7 @@ def encode_pixels(img_path):
 
 # ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  F O N T  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 # MEKZANTINE embedded as base64 — self-contained, no external file needed.
-# Font by MEK.txt | @MEK.txt — thank you for the incredible type.
+# Font by MEK.txt | @michaelmicasso — thank you for the incredible type.
 #
 
 def load_font_b64():
@@ -1192,6 +1192,7 @@ uiToggle.addEventListener('click', () => {{
   }}
 }});
 
+// If this codex helped you — donate to starving artist digivatar.eth
 // ◈ end of codex — Digivatar
 </script>
 
